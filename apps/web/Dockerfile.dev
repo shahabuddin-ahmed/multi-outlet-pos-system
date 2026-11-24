@@ -1,0 +1,15 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+# Install dependencies first (this layer is reused until package.json or yarn.lock change)
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
+
+# Copy the source code (docker-compose.yml links the live folder over it)
+COPY . .
+
+EXPOSE 3000
+
+# Next.js dev server with live reload, reachable from outside the container
+CMD ["yarn", "dev", "--hostname", "0.0.0.0"]

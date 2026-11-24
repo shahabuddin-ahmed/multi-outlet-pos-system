@@ -1,0 +1,19 @@
+# Web development: docker compose up --build (or the root docker-compose.yml for the whole app)
+# Settings come from .env in this folder. Web: http://localhost:3000
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # File events from macOS do not always reach Docker, so Next.js also checks for changes itself
+      WATCHPACK_POLLING: 'true'
+    ports:
+      - '3000:3000'
+    # The code folder is linked into the container; node_modules and .next stay inside it
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next

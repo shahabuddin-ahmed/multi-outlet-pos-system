@@ -1,0 +1,9 @@
+# Web production: docker compose -f docker-compose.prod.yml up --build -d
+# The API address is read from .env.production in this folder when the app is built.
+services:
+  web:
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
