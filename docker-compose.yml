@@ -1,0 +1,5 @@
+# The whole app in development: docker compose up --build
+# Each app keeps its own Compose file and .env; this file only pulls them in (needs Docker Compose 2.20+).
+include:
+  - apps/api/docker-compose.yml
+  - apps/web/docker-compose.yml
