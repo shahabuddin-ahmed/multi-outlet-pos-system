@@ -1,0 +1,18 @@
+node_modules
+npm-debug.log
+Dockerfile*
+docker-compose*
+.dockerignore
+.git
+.gitignore
+README.md
+LICENSE
+.vscode
+storage/*
+coverage
+dist
+
+# Secrets: never copied into an image. Docker compose and the server pass them in at runtime
+.env
+.env.*
+!.env.example
