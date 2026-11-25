@@ -7,3 +7,6 @@ process.env.JWT_SECRET = "test-only-secret-0123456789-abcdefghij";
 // Totals and report days in the tests assume these
 process.env.VAT_BPS = "500";
 process.env.BUSINESS_TIMEZONE = "Asia/Dhaka";
+// The database tests read these back
+process.env.DB_STATEMENT_TIMEOUT_MS = "15000";
+process.env.DB_LOCK_TIMEOUT_MS = "10000";

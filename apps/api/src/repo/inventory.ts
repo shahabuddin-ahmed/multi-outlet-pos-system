@@ -37,6 +37,14 @@ export interface NewMovement extends AssignmentKey {
     reason: StockReason;
     userId: number | null;
     note: string | null;
+    // The client's retry key
+    idempotencyKey: string;
+}
+
+// A saved manual change, with what a retry must match
+export interface KeyedMovementRecord extends MovementRecord {
+    menuItemId: number;
+    userId: number | null;
 }
 
 export interface NewSaleMovement extends AssignmentKey {
@@ -60,8 +68,14 @@ export interface LowStockRecord {
 export interface InventoryRepoInterface {
     findOne(key: AssignmentKey, transaction?: Transaction): Promise<StockRecord | null>;
     listByOutlet(outletId: number, query: ListQuery): Promise<Rows<StockRecord>>;
+    lock(key: AssignmentKey, transaction: Transaction): Promise<void>;
     changeQuantity(key: AssignmentKey, delta: number, transaction: Transaction): Promise<number | null>;
-    addMovement(movement: NewMovement, transaction: Transaction): Promise<MovementRecord>;
+    findByRetryKey(
+        outletId: number,
+        idempotencyKey: string,
+        transaction: Transaction
+    ): Promise<KeyedMovementRecord | null>;
+    addMovement(movement: NewMovement, transaction: Transaction): Promise<MovementRecord | null>;
     addSaleMovements(movements: NewSaleMovement[], transaction: Transaction): Promise<void>;
     listMovements(key: AssignmentKey, query: ListQuery): Promise<Rows<MovementRecord>>;
     listLowStock(threshold: number, query: ListQuery): Promise<Rows<LowStockRecord>>;
@@ -120,6 +134,16 @@ export class InventoryRepo implements InventoryRepoInterface {
         );
     }
 
+    // Holds the stock row until the transaction ends: other changes of this item wait their turn
+    public async lock(key: AssignmentKey, transaction: Transaction): Promise<void> {
+        await newSequelize().query(
+            `SELECT quantity FROM inventory
+             WHERE outlet_id = :outletId AND menu_item_id = :menuItemId
+             FOR NO KEY UPDATE`,
+            { replacements: { ...key }, type: QueryTypes.SELECT, transaction }
+        );
+    }
+
     // The one safe way to change stock: check and write in a single statement, so two changes at the same
     // moment can never take the quantity out of bounds. null: refused, nothing changed.
     // The row stays locked until the transaction ends.
@@ -135,18 +159,36 @@ export class InventoryRepo implements InventoryRepoInterface {
         return rows[0]?.quantity ?? null;
     }
 
-    public async addMovement(movement: NewMovement, transaction: Transaction): Promise<MovementRecord> {
+    public async findByRetryKey(
+        outletId: number,
+        idempotencyKey: string,
+        transaction: Transaction
+    ): Promise<KeyedMovementRecord | null> {
+        const rows = await newSequelize().query<KeyedMovementRecord>(
+            `SELECT ${movementColumns("s")}, u.full_name AS "userName", NULL AS "receiptNo", NULL AS "outletCode",
+                    s.menu_item_id AS "menuItemId", s.user_id AS "userId"
+             FROM stock_movements s
+             LEFT JOIN users u ON u.id = s.user_id
+             WHERE s.outlet_id = :outletId AND s.idempotency_key = :idempotencyKey`,
+            { replacements: { outletId, idempotencyKey }, type: QueryTypes.SELECT, transaction }
+        );
+        return rows[0] ?? null;
+    }
+
+    // null: the retry key is already taken, nothing was written
+    public async addMovement(movement: NewMovement, transaction: Transaction): Promise<MovementRecord | null> {
         const rows = await newSequelize().query<MovementRecord>(
             `INSERT INTO stock_movements
-                 (outlet_id, menu_item_id, delta, quantity_after, reason, user_id, note)
-             VALUES (:outletId, :menuItemId, :delta, :quantityAfter, :reason, :userId, :note)
+                 (outlet_id, menu_item_id, delta, quantity_after, reason, user_id, note, idempotency_key)
+             VALUES (:outletId, :menuItemId, :delta, :quantityAfter, :reason, :userId, :note, :idempotencyKey)
+             ON CONFLICT (outlet_id, idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING
              RETURNING ${movementColumns("stock_movements")},
                  (SELECT full_name FROM users u WHERE u.id = stock_movements.user_id) AS "userName",
                  NULL AS "receiptNo",
                  NULL AS "outletCode"`,
             { replacements: { ...movement }, type: QueryTypes.SELECT, transaction }
         );
-        return rows[0];
+        return rows[0] ?? null;
     }
 
     public async addSaleMovements(movements: NewSaleMovement[], transaction: Transaction): Promise<void> {

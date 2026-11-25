@@ -5,7 +5,7 @@
     "main": "app.ts",
     "scripts": {
         "dev": "nodemon",
-        "build": "tsc",
+        "build": "tsc -p tsconfig.build.json",
         "start": "node dist/server.js",
         "prod": "yarn build && yarn start",
         "db:migrate": "node -r ts-node/register -r tsconfig-paths/register src/infra/db-cli.ts migrate",
@@ -27,6 +27,7 @@
         "test-e2e": "jest --forceExit --coverage --verbose --runInBand --detectOpenHandles e2e",
         "watch-test": "yarn test -- --watchAll",
         "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\" --quiet --fix",
+        "lint:check": "tsc --noEmit && eslint \"**/*.{js,ts}\" --max-warnings 0",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "debug": "yarn build && yarn serve-debug",
@@ -35,17 +36,17 @@
     "author": "Shahabuddin Ahmed",
     "license": "MIT",
     "dependencies": {
-        "body-parser": "^1.20.3",
+        "body-parser": "^1.20.9",
         "cors": "^2.8.5",
         "dotenv": "^16.4.5",
-        "express": "^4.21.2",
+        "express": "^4.22.3",
         "express-rate-limit": "^7.5.0",
         "helmet": "^8.1.0",
-        "joi": "^17.13.3",
+        "joi": "^17.13.9",
         "jsonwebtoken": "^9.0.3",
         "pg": "^8.13.1",
         "pg-hstore": "^2.3.4",
-        "sequelize": "^6.37.7",
+        "sequelize": "^6.37.8",
         "umzug": "^3.8.2"
     },
     "devDependencies": {
@@ -69,5 +70,8 @@
         "ts-node": "^10.9.2",
         "tsconfig-paths": "^4.2.0",
         "typescript": "^5.6.2"
+    },
+    "resolutions": {
+        "sequelize/uuid": "^11.1.1"
     }
 }

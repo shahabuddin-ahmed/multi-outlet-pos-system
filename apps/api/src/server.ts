@@ -25,7 +25,7 @@ const shutdown = (): void => {
 
     setTimeout(() => {
         logger.error("Could not close connections in time, forcing shutdown");
-        process.exit();
+        process.exit(1);
     }, config.APP_FORCE_SHUTDOWN_SECOND * MS_PER_SECOND);
 };
 

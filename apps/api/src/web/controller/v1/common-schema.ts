@@ -1,5 +1,6 @@
+import { Request } from "express";
 import Joi from "joi";
-import { PAGINATION, SEARCH_MAX_LENGTH, UUID_PATTERN } from "../../../constant/api";
+import { IDEMPOTENCY_HEADER, PAGINATION, SEARCH_MAX_LENGTH, UUID_PATTERN } from "../../../constant/api";
 import { CALENDAR_DATE_PATTERN } from "../../../constant/sale";
 
 // Records are addressed by their public UUID only
@@ -19,6 +20,15 @@ export const menuItemParamsSchema = Joi.object({
 export const outletItemParamsSchema = Joi.object({
     outletId: publicIdSchema.required(),
     menuItemId: publicIdSchema.required(),
+});
+
+// The retry key is read from its header and checked like any other input
+export const idempotencyHeaderSchema = Joi.object({
+    idempotencyKey: publicIdSchema.required().label(IDEMPOTENCY_HEADER),
+});
+
+export const idempotencyInputOf = (req: Request) => ({
+    idempotencyKey: req.header(IDEMPOTENCY_HEADER)?.toLowerCase(),
 });
 
 export const pageFields = (defaultLimit: number) => ({
@@ -46,7 +56,7 @@ export const calendarDateSchema = Joi.string()
         const exists = !Number.isNaN(day.getTime()) && day.toISOString().startsWith(value);
         return exists ? value : helpers.error("string.pattern.base");
     })
-    .messages({ "string.pattern.base": "{{#label}} must be a date as YYYY-MM-DD" })
+    .messages({ "string.pattern.base": "{{#label}} must be a date as YYYY-MM-DD (year 1900 to 2999)" })
     .empty("");
 
 // A text field the user may clear: "" and null both mean "nothing"

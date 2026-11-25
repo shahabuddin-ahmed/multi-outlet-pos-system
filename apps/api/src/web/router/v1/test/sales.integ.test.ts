@@ -2,9 +2,8 @@ import { randomUUID } from "crypto";
 import { Express } from "express";
 import { QueryTypes } from "sequelize";
 import request from "supertest";
-import { API_PREFIX } from "../../../../constant/api";
+import { API_PREFIX, IDEMPOTENCY_HEADER } from "../../../../constant/api";
 import { UserRole } from "../../../../constant/auth";
-import { IDEMPOTENCY_HEADER } from "../../../../constant/sale";
 import newSequelize from "../../../../infra/sequelize";
 import { resetTestData } from "../../../../infra/test/test-database";
 import { SaleClaimRepo } from "../../../../repo/sale-claim";
@@ -62,6 +61,7 @@ const changeStock = async (itemId: string, delta: number, token: string = manage
     const res = await request(app)
         .post(`${API_PREFIX}/outlets/${outletId}/inventory/${itemId}/adjustments`)
         .set("Authorization", `Bearer ${token}`)
+        .set(IDEMPOTENCY_HEADER, randomUUID())
         .send({ delta, reason: delta > 0 ? "RESTOCK" : "WASTE" });
     expect(res.status).toBe(201);
 };

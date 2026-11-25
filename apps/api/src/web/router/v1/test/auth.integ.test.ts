@@ -95,6 +95,17 @@ describe("every request", () => {
         expect((await call("get", "/auth/me", token)).status).toBe(401);
     });
 
+    it("ends earlier logins when the password changes", async () => {
+        const { email, token } = await signInAs(app, UserRole.CASHIER, "DHK");
+
+        await staffService.setPassword(email, "a-new-password");
+        const old = await call("get", "/auth/me", token);
+        const fresh = (await logIn(app, email, "a-new-password")).body.response.token;
+
+        expect([old.status, old.body.code]).toEqual([401, "E_UNAUTHENTICATED"]);
+        expect((await call("get", "/auth/me", fresh)).status).toBe(200);
+    });
+
     it("stops the staff of a switched-off outlet", async () => {
         const { email, token } = await signInAs(app, UserRole.CASHIER, "DHK");
 

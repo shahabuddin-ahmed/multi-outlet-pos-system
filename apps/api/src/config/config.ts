@@ -4,6 +4,7 @@ import { Options } from "sequelize";
 import { DEFAULT_PORT } from "../constant/api";
 import { AUTH_DEFAULTS, EXAMPLE_JWT_SECRET, JWT_SECRET_MIN_LENGTH, TOKEN_LIFETIME_PATTERN } from "../constant/auth";
 import { BUSINESS_DEFAULTS, CURRENCY_PATTERN, VAT_BPS_MAX } from "../constant/business";
+import { DATABASE_TIMEOUT_DEFAULTS, POOL_ACQUIRE_MS } from "../constant/database";
 import { DATABASE_NAME_PATTERN, NodeEnv, TEST_DATABASE_SUFFIX } from "../constant/env";
 
 interface AppConfig {
@@ -19,6 +20,17 @@ interface DatabaseConfig {
     POSTGRES_TEST_DB: string;
     POSTGRES_USER: string;
     POSTGRES_PASSWORD: string;
+}
+
+interface ConnectionConfig {
+    // Encrypts the connection; hosted databases usually require it
+    POSTGRES_SSL: boolean;
+    // false only for a host whose certificate cannot be checked
+    POSTGRES_SSL_VERIFY: boolean;
+    // Time limits in milliseconds, 0 for none
+    DB_STATEMENT_TIMEOUT_MS: number;
+    DB_LOCK_TIMEOUT_MS: number;
+    DB_IDLE_TRANSACTION_TIMEOUT_MS: number;
 }
 
 interface SecurityConfig {
@@ -54,13 +66,15 @@ interface Config extends AppConfig {
     SEED_DEMO_DATA: boolean;
 }
 
-interface Env extends AppConfig, DatabaseConfig, SecurityConfig, AuthConfig, BusinessConfig {
+interface Env extends AppConfig, DatabaseConfig, ConnectionConfig, SecurityConfig, AuthConfig, BusinessConfig {
     // Hosting platforms set PORT; APPLICATION_SERVER_PORT wins when both are set
     PORT?: number;
     SEED_DEMO_DATA: boolean;
 }
 
 const databaseName = Joi.string().pattern(DATABASE_NAME_PATTERN).max(63);
+
+const timeLimit = Joi.number().integer().min(0);
 
 const timeZone = Joi.string().custom((value: string, helpers) => {
     try {
@@ -95,6 +109,12 @@ const envSchema = Joi.object<Env>({
             then: Joi.required(),
             otherwise: Joi.string().default("postgres"),
         }),
+
+    POSTGRES_SSL: Joi.boolean().default(false),
+    POSTGRES_SSL_VERIFY: Joi.boolean().default(true),
+    DB_STATEMENT_TIMEOUT_MS: timeLimit.default(DATABASE_TIMEOUT_DEFAULTS.STATEMENT_MS),
+    DB_LOCK_TIMEOUT_MS: timeLimit.default(DATABASE_TIMEOUT_DEFAULTS.LOCK_MS),
+    DB_IDLE_TRANSACTION_TIMEOUT_MS: timeLimit.default(DATABASE_TIMEOUT_DEFAULTS.IDLE_TRANSACTION_MS),
 
     WEB_ORIGIN: Joi.string()
         .custom((value: string) =>
@@ -133,6 +153,20 @@ if (error) {
     throw new Error(`Invalid environment settings: ${error.details.map((detail) => detail.message).join("; ")}`);
 }
 
+// What the database driver gets besides address and login. A limit of 0 is not sent at all,
+// because some connection poolers refuse these settings.
+const dialectOptionsOf = (settings: ConnectionConfig) => {
+    const limits = {
+        statement_timeout: settings.DB_STATEMENT_TIMEOUT_MS,
+        lock_timeout: settings.DB_LOCK_TIMEOUT_MS,
+        idle_in_transaction_session_timeout: settings.DB_IDLE_TRANSACTION_TIMEOUT_MS,
+    };
+    return {
+        ...(settings.POSTGRES_SSL ? { ssl: { rejectUnauthorized: settings.POSTGRES_SSL_VERIFY } } : {}),
+        ...Object.fromEntries(Object.entries(limits).filter(([, milliseconds]) => milliseconds > 0)),
+    };
+};
+
 const config: Config = {
     NODE_ENV: env.NODE_ENV,
     APPLICATION_SERVER_PORT: env.APPLICATION_SERVER_PORT ?? env.PORT ?? DEFAULT_PORT,
@@ -150,7 +184,8 @@ const config: Config = {
         host: env.POSTGRES_HOST,
         port: env.POSTGRES_PORT,
         dialect: "postgres",
-        pool: { max: 20, min: 2, idle: 10000 },
+        pool: { max: 20, min: 2, idle: 10000, acquire: POOL_ACQUIRE_MS },
+        dialectOptions: dialectOptionsOf(env),
         define: { timestamps: false },
         logging: false,
     },

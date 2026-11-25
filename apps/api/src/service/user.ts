@@ -55,7 +55,7 @@ export class UserService implements UserServiceInterface {
     async setPassword(email: string, password?: string): Promise<PasswordResult> {
         const account = await this.accountOf(email);
         const secret = password ?? generatePassword();
-        await this.repo.updatePasswordHash(account.id, await hashPassword(secret));
+        await this.repo.changePassword(account.id, await hashPassword(secret));
         return { generatedPassword: password ? null : secret };
     }
 

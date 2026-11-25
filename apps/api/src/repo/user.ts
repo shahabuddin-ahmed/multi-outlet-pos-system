@@ -12,6 +12,7 @@ export interface AccountRecord {
     fullName: string;
     role: UserRole;
     isActive: boolean;
+    tokenVersion: number;
     // The outlet fields are all null for head office
     outletId: number | null;
     outletPublicId: string | null;
@@ -26,7 +27,7 @@ export interface UserRepoInterface {
     create(user: NewUser): Promise<UserInterface>;
     findByEmail(email: string): Promise<AccountRecord | null>;
     findByPublicId(publicId: string): Promise<AccountRecord | null>;
-    updatePasswordHash(id: number, passwordHash: string): Promise<void>;
+    changePassword(id: number, passwordHash: string): Promise<void>;
     deactivate(id: number): Promise<void>;
 }
 
@@ -38,6 +39,7 @@ const SELECT_ACCOUNT = `
            u.full_name AS "fullName",
            u.role AS "role",
            u.is_active AS "isActive",
+           u.token_version AS "tokenVersion",
            u.outlet_id AS "outletId",
            o.public_id AS "outletPublicId",
            o.code AS "outletCode",
@@ -60,8 +62,14 @@ export class UserRepo implements UserRepoInterface {
         return this.findWhere("u.public_id = :value", publicId);
     }
 
-    public async updatePasswordHash(id: number, passwordHash: string): Promise<void> {
-        await User.update({ passwordHash }, { where: { id } });
+    // The new password and the end of earlier logins are one statement
+    public async changePassword(id: number, passwordHash: string): Promise<void> {
+        await newSequelize().query(
+            `UPDATE users
+             SET password_hash = :passwordHash, token_version = token_version + 1, updated_at = now()
+             WHERE id = :id`,
+            { replacements: { id, passwordHash } }
+        );
     }
 
     public async deactivate(id: number): Promise<void> {

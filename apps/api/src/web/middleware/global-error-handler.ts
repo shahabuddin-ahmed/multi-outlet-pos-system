@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { PG_TIMEOUT_CODES } from "../../constant/database";
 import { errorMessages, ERROR_CODES } from "../../constant/error";
 import { NodeEnv } from "../../constant/env";
 import { HttpStatus } from "../../constant/http";
@@ -25,27 +26,38 @@ const BODY_ERRORS: Record<string, KnownError> = {
     "entity.too.large": { status: HttpStatus.PAYLOAD_TOO_LARGE, code: ERROR_CODES.E_PAYLOAD_TOO_LARGE },
 };
 
-// Database errors that mean "this clashes with existing data", found by err.name
+const BUSY: KnownError = { status: HttpStatus.SERVICE_UNAVAILABLE, code: ERROR_CODES.E_SERVICE_UNAVAILABLE };
+
+// Database errors the client can act on, found by err.name: a clash with existing data, or no free connection
 const DATABASE_ERRORS: Record<string, KnownError> = {
     SequelizeUniqueConstraintError: { status: HttpStatus.CONFLICT, code: ERROR_CODES.E_CONFLICT },
+    SequelizeConnectionAcquireTimeoutError: BUSY,
+};
+
+const knownErrorOf = (err: any): KnownError | undefined => {
+    if (PG_TIMEOUT_CODES.includes(err.parent?.code)) {
+        // The database cut off a long wait; trying again is safe
+        return BUSY;
+    }
+    return BODY_ERRORS[err.type] ?? DATABASE_ERRORS[err.name];
 };
 
 const detailsOf = (err: any, knownError: KnownError | undefined, isServerError: boolean): ErrorDetails => {
-    if (isServerError) {
-        const message = errorMessages.E_INTERNAL_SERVER_ERROR.message;
-        return { code: ERROR_CODES.E_INTERNAL_SERVER_ERROR, message, errors: [message] };
-    }
     if (knownError) {
         // Fixed text only: database errors can contain row values
         const message = errorMessages[knownError.code].message;
         return { code: knownError.code, message, errors: [message] };
+    }
+    if (isServerError) {
+        const message = errorMessages.E_INTERNAL_SERVER_ERROR.message;
+        return { code: ERROR_CODES.E_INTERNAL_SERVER_ERROR, message, errors: [message] };
     }
     const message = err.message || errorMessages.E_INVALID_DATA.message;
     return { code: err.code ?? ERROR_CODES.E_INVALID_DATA, message, errors: err.errors || [message] };
 };
 
 export const globalErrorHandler = (err: any, req: Request, res: Response, _next: NextFunction) => {
-    const knownError = BODY_ERRORS[err.type] ?? DATABASE_ERRORS[err.name];
+    const knownError = knownErrorOf(err);
     const statusCode: number = knownError?.status ?? err.statusCode ?? HttpStatus.INTERNAL_SERVER_ERROR;
     const isServerError = statusCode >= HttpStatus.INTERNAL_SERVER_ERROR;
 
