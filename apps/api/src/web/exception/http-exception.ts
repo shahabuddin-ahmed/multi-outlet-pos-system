@@ -7,7 +7,9 @@ export class HttpException extends Error {
         private statusCode: HttpStatus,
         private code: ERROR_CODES,
         private customMessage?: string,
-        private errors?: string[]
+        private errors?: string[],
+        // Data the client needs to react, sent as "response" (e.g. the new prices of a sale)
+        readonly details?: object
     ) {
         super(customMessage || retrieveErrorMessage(code));
     }

@@ -1,0 +1,67 @@
+# Checks every pull request, and what lands on the main branches
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [develop, master]
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+          cache-dependency-path: apps/api/yarn.lock
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint:check
+      - run: yarn format:check
+      # Real PostgreSQL: the tests create the pos_test database themselves
+      - run: yarn test
+      - run: yarn build
+      # Packages that ship in the production image
+      - run: yarn audit --groups dependencies
+      - run: docker build -t pos-api .
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+          cache-dependency-path: apps/web/yarn.lock
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint
+      - run: yarn format:check
+      - run: yarn build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+      # Type check after the build, which writes the route types
+      - run: yarn tsc --noEmit
+      - run: yarn audit --groups dependencies

@@ -13,6 +13,26 @@ export const assertTestDatabase = (): void => {
     }
 };
 
+// A new table with business data goes in this list
+const BUSINESS_TABLES = [
+    "sale_idempotency",
+    "sale_items",
+    "sales",
+    "stock_movements",
+    "users",
+    "inventory",
+    "outlet_menu_items",
+    "outlet_receipt_counters",
+    "menu_items",
+    "outlets",
+];
+
+// Empties the business tables, so every test starts from nothing
+export const resetTestData = async (): Promise<void> => {
+    assertTestDatabase();
+    await newSequelize().query(`TRUNCATE TABLE ${BUSINESS_TABLES.join(", ")} RESTART IDENTITY CASCADE`);
+};
+
 // Creates the test database when missing and brings it up to date (tables and default data).
 export const prepareTestDatabase = async (): Promise<void> => {
     assertTestDatabase();

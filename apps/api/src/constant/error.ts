@@ -8,6 +8,24 @@ export enum ERROR_CODES {
     E_UNPROCESSABLE = "E_UNPROCESSABLE",
     E_TOO_MANY_REQUESTS = "E_TOO_MANY_REQUESTS",
     E_PAYLOAD_TOO_LARGE = "E_PAYLOAD_TOO_LARGE",
+    E_OUTLET_NOT_FOUND = "E_OUTLET_NOT_FOUND",
+    E_MENU_ITEM_NOT_FOUND = "E_MENU_ITEM_NOT_FOUND",
+    E_DUPLICATE_OUTLET_CODE = "E_DUPLICATE_OUTLET_CODE",
+    E_DUPLICATE_SKU = "E_DUPLICATE_SKU",
+    E_UNAUTHENTICATED = "E_UNAUTHENTICATED",
+    E_INVALID_CREDENTIALS = "E_INVALID_CREDENTIALS",
+    E_FORBIDDEN = "E_FORBIDDEN",
+    E_OUTLET_INACTIVE = "E_OUTLET_INACTIVE",
+    E_USER_NOT_FOUND = "E_USER_NOT_FOUND",
+    E_DUPLICATE_EMAIL = "E_DUPLICATE_EMAIL",
+    E_ITEM_NOT_ASSIGNED = "E_ITEM_NOT_ASSIGNED",
+    E_INSUFFICIENT_STOCK = "E_INSUFFICIENT_STOCK",
+    E_STOCK_ABOVE_LIMIT = "E_STOCK_ABOVE_LIMIT",
+    E_SALE_NOT_FOUND = "E_SALE_NOT_FOUND",
+    E_ITEM_NOT_SELLABLE = "E_ITEM_NOT_SELLABLE",
+    E_PRICE_CHANGED = "E_PRICE_CHANGED",
+    E_TENDER_TOO_LOW = "E_TENDER_TOO_LOW",
+    E_IDEMPOTENCY_KEY_REUSED = "E_IDEMPOTENCY_KEY_REUSED",
 }
 
 export const errorMessages: Record<ERROR_CODES, { message: string }> = {
@@ -37,6 +55,60 @@ export const errorMessages: Record<ERROR_CODES, { message: string }> = {
     },
     E_PAYLOAD_TOO_LARGE: {
         message: "The request body is too large.",
+    },
+    E_OUTLET_NOT_FOUND: {
+        message: "Outlet not found",
+    },
+    E_MENU_ITEM_NOT_FOUND: {
+        message: "Menu item not found",
+    },
+    E_DUPLICATE_OUTLET_CODE: {
+        message: "An outlet with this code already exists",
+    },
+    E_DUPLICATE_SKU: {
+        message: "A menu item with this SKU already exists",
+    },
+    E_UNAUTHENTICATED: {
+        message: "Please sign in again",
+    },
+    E_INVALID_CREDENTIALS: {
+        message: "Email or password is incorrect",
+    },
+    E_FORBIDDEN: {
+        message: "You are not allowed to do this",
+    },
+    E_OUTLET_INACTIVE: {
+        message: "Your outlet is switched off. Contact head office.",
+    },
+    E_USER_NOT_FOUND: {
+        message: "User not found",
+    },
+    E_DUPLICATE_EMAIL: {
+        message: "A user with this email already exists",
+    },
+    E_ITEM_NOT_ASSIGNED: {
+        message: "This item is not assigned to this outlet",
+    },
+    E_INSUFFICIENT_STOCK: {
+        message: "Not enough stock",
+    },
+    E_STOCK_ABOVE_LIMIT: {
+        message: "Stock cannot go above 1,000,000",
+    },
+    E_SALE_NOT_FOUND: {
+        message: "Sale not found",
+    },
+    E_ITEM_NOT_SELLABLE: {
+        message: "Some items cannot be sold at this outlet",
+    },
+    E_PRICE_CHANGED: {
+        message: "Prices have changed. Check the new total.",
+    },
+    E_TENDER_TOO_LOW: {
+        message: "The cash received is less than the total",
+    },
+    E_IDEMPOTENCY_KEY_REUSED: {
+        message: "This retry key was already used for a different request",
     },
 };
 

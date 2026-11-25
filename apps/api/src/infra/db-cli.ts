@@ -1,9 +1,9 @@
-import newSequelize, { createDatabaseIfMissing } from "./sequelize";
+import { createDatabaseIfMissing, newMaintenanceSequelize } from "./sequelize";
 import { newMigrator, newSeeder } from "./migrator";
 import { DbCommand } from "../constant/env";
 
 const run = async (command: DbCommand): Promise<void> => {
-    const sequelize = newSequelize();
+    const sequelize = newMaintenanceSequelize();
     const migrator = newMigrator(sequelize);
     const seeder = newSeeder(sequelize);
 

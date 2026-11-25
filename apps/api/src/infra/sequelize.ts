@@ -1,5 +1,6 @@
 import { QueryTypes, Sequelize } from "sequelize";
 import config from "../config/config";
+import { PG_UNKNOWN_DATABASE_CODE } from "../constant/database";
 import { ADMIN_DATABASE } from "../constant/env";
 
 export class ConnectDB {
@@ -22,21 +23,47 @@ export class ConnectDB {
     }
 }
 
-// PostgreSQL has no CREATE DATABASE IF NOT EXISTS: connect to the admin database and check first.
-export const createDatabaseIfMissing = async (): Promise<void> => {
-    const { POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD } = config.SEQUELIZE;
-    const server = new Sequelize(ADMIN_DATABASE, POSTGRES_USER, POSTGRES_PASSWORD, {
+// A single connection for setup work. It keeps the encryption setting but not the time limits:
+// a migration may rightly take long, for example to index a big table.
+export const newMaintenanceSequelize = (database: string = config.SEQUELIZE.POSTGRES_DB): Sequelize => {
+    const { ssl } = config.SEQUELIZEOPTIONS.dialectOptions as { ssl?: object };
+    return new Sequelize(database, config.SEQUELIZE.POSTGRES_USER, config.SEQUELIZE.POSTGRES_PASSWORD, {
         ...config.SEQUELIZEOPTIONS,
+        dialectOptions: ssl ? { ssl } : {},
         pool: { max: 1, min: 0 },
     });
+};
+
+const databaseExists = async (database: string): Promise<boolean> => {
+    const connection = newMaintenanceSequelize(database);
+    try {
+        await connection.authenticate();
+        return true;
+    } catch (err: any) {
+        if (err?.parent?.code === PG_UNKNOWN_DATABASE_CODE) {
+            return false;
+        }
+        throw err;
+    } finally {
+        await connection.close();
+    }
+};
+
+// The app database is tried first, so a hosted database that offers nothing else works. Only when it is
+// missing is the admin database used: PostgreSQL has no CREATE DATABASE IF NOT EXISTS.
+export const createDatabaseIfMissing = async (database: string = config.SEQUELIZE.POSTGRES_DB): Promise<void> => {
+    if (await databaseExists(database)) {
+        return;
+    }
+    const server = newMaintenanceSequelize(ADMIN_DATABASE);
     try {
         const found = await server.query("SELECT 1 FROM pg_database WHERE datname = :name", {
-            replacements: { name: POSTGRES_DB },
+            replacements: { name: database },
             type: QueryTypes.SELECT,
         });
         if (found.length === 0) {
-            // The name is checked against DATABASE_NAME_PATTERN in config, so it is safe to quote here
-            await server.query(`CREATE DATABASE "${POSTGRES_DB}"`);
+            // The name comes from settings checked against DATABASE_NAME_PATTERN, so it is safe to quote here
+            await server.query(`CREATE DATABASE "${database}"`);
         }
     } finally {
         await server.close();

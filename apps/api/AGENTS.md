@@ -10,6 +10,7 @@ Requests go **router → controller → service → repo → model**. Keep each 
 | -------------------- | ------------------------------------------------------------------------ | -------------------------------------- |
 | `src/web/router`     | Routes and middleware                                                    | Logic                                  |
 | `src/web/controller` | Joi checks with `validateRequest`, then one service call, `sendResponse` | Database calls                         |
+| `src/web/dto`        | Build the answer: one mapper per record, fields listed one by one        | Database calls                         |
 | `src/service`        | Business logic, transactions                                             | Express objects (`req`, `res`)         |
 | `src/repo`           | Run queries and return the result                                        | Business rules, try/catch              |
 | `src/model`          | Sequelize table definitions                                              | Logic                                  |
@@ -20,7 +21,23 @@ Requests go **router → controller → service → repo → model**. Keep each 
     error leads to another action (a fallback, a retry), never just to log it.
 -   Validation is strict: a field the Joi schema does not list is rejected.
 -   A new setting goes in `src/config/config.ts` (checked with Joi at start-up), `.env.example` and the README.
--   Money is stored as integer cents, never as a float.
+-   Money is stored as integer minor units (paisa), never as a float.
+
+## Ids
+
+-   The integer `id` is internal. It is never sent to a client and never accepted from one.
+-   A record the API shows has `public_id` (UUID). In JSON it is `id`; routes and bodies use it.
+-   Controllers never send a model or repository record as it is: it goes through a mapper in `src/web/dto`.
+
+## Access
+
+-   In `src/web/router/v1/index.ts`, routes added after `v1.use(authenticate)` need a signed-in user.
+-   Every one of those routes also names who may use it (`headOfficeOnly`, `allowRoles`, `allowAtOutlet`). A route
+    under `/outlets/:outletId` must stop staff of another outlet.
+-   Never log or return a password, a password hash or a token (the login answer is the one place a token is sent).
+-   A password change goes through `UserRepo.changePassword`, which also ends every earlier login.
+-   A write a client may send twice (a sale, a stock change) takes an `Idempotency-Key` and happens once.
+-   `src/cli` holds commands such as the staff accounts: like a controller, they check input and call one service.
 
 ## Database
 
@@ -28,6 +45,13 @@ Requests go **router → controller → service → repo → model**. Keep each 
 -   **Never edit a migration that has already run.** Add a new file named `YYYYMMDDHHMMSS-what-it-does.ts` with both
     `up` and `down`.
 -   Columns are `snake_case` in the database; models use `underscored: true`, so code uses camelCase.
+-   Simple one-table records use a model. Joins and writes that must be safe under concurrency use SQL in the
+    repository, with every value passed through `replacements`.
+-   Stock changes only through `InventoryRepo.changeQuantity` (one conditional `UPDATE`), with its
+    `stock_movements` row written in the same transaction.
+-   Inside a transaction every query takes that transaction; a second pool connection can leave a busy pool stuck.
+-   A sale takes its locks in one order: retry key, stock rows by internal item id, receipt counter last.
+-   Records are switched off (`is_active`), never deleted; foreign keys are `ON DELETE RESTRICT`.
 -   Rules that must always hold (no negative stock, one receipt number per outlet) belong in the database as
     `CHECK` and `UNIQUE` constraints, as well as in the service.
 -   Do not run migrations on the dev database without approval. Tests use a database whose name ends with `_test`.
@@ -47,8 +71,3 @@ Requests go **router → controller → service → repo → model**. Keep each 
 
 Prettier: 4 spaces, double quotes, 120 columns. Format only the files you change (`npx prettier --write <file>`),
 never the whole repository.
-
-## Sample code
-
-`posts` (model, repo, service, controller, router, migration, `constant/post.ts`) is a sample CRUD that proves the
-stack. Copy its pattern for a real feature, then delete it.

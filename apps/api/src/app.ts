@@ -4,10 +4,31 @@ import config from "./config/config";
 import { API_PREFIX, JSON_BODY_LIMIT } from "./constant/api";
 import { ERROR_CODES } from "./constant/error";
 import { initializeDBConnection } from "./infra/db";
-import { newPostRepo } from "./repo/post";
-import { newPostService } from "./service/post";
-import { newPostV1Controller } from "./web/controller/v1/post";
+import { newAssignmentRepo } from "./repo/assignment";
+import { newInventoryRepo } from "./repo/inventory";
+import { newMenuItemRepo } from "./repo/menu-item";
+import { newOutletRepo } from "./repo/outlet";
+import { newReportRepo } from "./repo/report";
+import { newSaleRepo } from "./repo/sale";
+import { newSaleClaimRepo } from "./repo/sale-claim";
+import { newUserRepo } from "./repo/user";
+import { newAssignmentService } from "./service/assignment";
+import { newAuthService } from "./service/auth";
+import { newInventoryService } from "./service/inventory";
+import { newMenuItemService } from "./service/menu-item";
+import { newOutletService } from "./service/outlet";
+import { newReportService } from "./service/report";
+import { newSaleService } from "./service/sale";
+import { newAppConfigV1Controller } from "./web/controller/v1/app-config";
+import { newAssignmentV1Controller } from "./web/controller/v1/assignment";
+import { newAuthV1Controller } from "./web/controller/v1/auth";
+import { newInventoryV1Controller } from "./web/controller/v1/inventory";
+import { newMenuItemV1Controller } from "./web/controller/v1/menu-item";
+import { newOutletV1Controller } from "./web/controller/v1/outlet";
+import { newReportV1Controller } from "./web/controller/v1/report";
+import { newSaleV1Controller } from "./web/controller/v1/sale";
 import { NotFoundException } from "./web/exception/not-found-exception";
+import { newAuthenticate } from "./web/middleware/authenticate";
 import { globalErrorHandler } from "./web/middleware/global-error-handler";
 import { newRateLimit } from "./web/middleware/rate-limit";
 import { requestId } from "./web/middleware/request-id";
@@ -33,17 +54,54 @@ export const appReady: Promise<void> = (async () => {
     await initializeDBConnection();
 
     // Initialize Repo
-    const postRepo = await newPostRepo();
+    const outletRepo = await newOutletRepo();
+    const menuItemRepo = await newMenuItemRepo();
+    const assignmentRepo = await newAssignmentRepo();
+    const userRepo = await newUserRepo();
+    const inventoryRepo = await newInventoryRepo();
+    const saleRepo = await newSaleRepo();
+    const saleClaimRepo = await newSaleClaimRepo();
+    const reportRepo = await newReportRepo();
 
     // Initialize Service
-    const postService = await newPostService(postRepo);
+    const authService = await newAuthService(userRepo, config.AUTH);
+    const outletService = await newOutletService(outletRepo);
+    const menuItemService = await newMenuItemService(menuItemRepo);
+    const assignmentService = await newAssignmentService(assignmentRepo, outletService, menuItemService);
+    const inventoryService = await newInventoryService(inventoryRepo, outletService, menuItemService);
+    const saleService = await newSaleService(
+        saleRepo,
+        saleClaimRepo,
+        assignmentRepo,
+        inventoryRepo,
+        outletService,
+        config.BUSINESS
+    );
+    const reportService = await newReportService(reportRepo, outletService, config.BUSINESS);
 
     // Initialize Controller
-    const postV1Controller = await newPostV1Controller(postService);
+    const authV1Controller = await newAuthV1Controller(authService);
+    const appConfigV1Controller = await newAppConfigV1Controller(config.BUSINESS);
+    const outletV1Controller = await newOutletV1Controller(outletService);
+    const menuItemV1Controller = await newMenuItemV1Controller(menuItemService);
+    const assignmentV1Controller = await newAssignmentV1Controller(assignmentService);
+    const inventoryV1Controller = await newInventoryV1Controller(inventoryService);
+    const reportV1Controller = await newReportV1Controller(reportService, inventoryService);
+    const saleV1Controller = await newSaleV1Controller(saleService);
 
     // Initialize Router
     const v1Router = await newV1Router({
-        postController: postV1Controller,
+        authenticate: newAuthenticate(authService),
+        // Slows down password guessing, on top of the general limit
+        loginRateLimit: newRateLimit(config.AUTH.LOGIN_RATE_LIMIT_PER_MINUTE),
+        authController: authV1Controller,
+        appConfigController: appConfigV1Controller,
+        outletController: outletV1Controller,
+        menuItemController: menuItemV1Controller,
+        assignmentController: assignmentV1Controller,
+        inventoryController: inventoryV1Controller,
+        reportController: reportV1Controller,
+        saleController: saleV1Controller,
     });
 
     app.use(API_PREFIX, v1Router);

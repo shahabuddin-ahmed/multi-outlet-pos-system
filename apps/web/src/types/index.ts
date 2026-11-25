@@ -18,21 +18,3 @@ export interface Paged<T> {
   limit: number;
   total: number;
 }
-
-// Sample feature: removed together with the API's posts
-export interface Post {
-  id: number;
-  title: string;
-  content: string;
-  author: string;
-  tags: string[];
-  published: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PostInput {
-  title: string;
-  content: string;
-  author?: string;
-}
