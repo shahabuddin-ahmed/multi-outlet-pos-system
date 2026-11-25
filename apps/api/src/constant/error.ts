@@ -12,6 +12,12 @@ export enum ERROR_CODES {
     E_MENU_ITEM_NOT_FOUND = "E_MENU_ITEM_NOT_FOUND",
     E_DUPLICATE_OUTLET_CODE = "E_DUPLICATE_OUTLET_CODE",
     E_DUPLICATE_SKU = "E_DUPLICATE_SKU",
+    E_UNAUTHENTICATED = "E_UNAUTHENTICATED",
+    E_INVALID_CREDENTIALS = "E_INVALID_CREDENTIALS",
+    E_FORBIDDEN = "E_FORBIDDEN",
+    E_OUTLET_INACTIVE = "E_OUTLET_INACTIVE",
+    E_USER_NOT_FOUND = "E_USER_NOT_FOUND",
+    E_DUPLICATE_EMAIL = "E_DUPLICATE_EMAIL",
 }
 
 export const errorMessages: Record<ERROR_CODES, { message: string }> = {
@@ -53,6 +59,24 @@ export const errorMessages: Record<ERROR_CODES, { message: string }> = {
     },
     E_DUPLICATE_SKU: {
         message: "A menu item with this SKU already exists",
+    },
+    E_UNAUTHENTICATED: {
+        message: "Please sign in again",
+    },
+    E_INVALID_CREDENTIALS: {
+        message: "Email or password is incorrect",
+    },
+    E_FORBIDDEN: {
+        message: "You are not allowed to do this",
+    },
+    E_OUTLET_INACTIVE: {
+        message: "Your outlet is switched off. Contact head office.",
+    },
+    E_USER_NOT_FOUND: {
+        message: "User not found",
+    },
+    E_DUPLICATE_EMAIL: {
+        message: "A user with this email already exists",
     },
 };
 

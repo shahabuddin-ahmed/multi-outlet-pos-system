@@ -1,3 +1,6 @@
 // Loaded before every test file, before the settings are read (.env never overrides these).
-// Tests send many requests from one address, so the rate limit must not get in the way.
+// Tests send many requests from one address, so the rate limits must not get in the way.
 process.env.RATE_LIMIT_PER_MINUTE = "100000";
+process.env.LOGIN_RATE_LIMIT_PER_MINUTE = "100000";
+// A fixed secret, so tests do not depend on what is in .env
+process.env.JWT_SECRET = "test-only-secret-0123456789-abcdefghij";
