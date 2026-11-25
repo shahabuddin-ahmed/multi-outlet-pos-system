@@ -2,10 +2,19 @@ export const API_PREFIX = "/api/v1";
 
 export const JSON_BODY_LIMIT = "100kb";
 
+export const DEFAULT_PORT = 4000;
+
 export const PAGINATION = {
     DEFAULT_LIST_LIMIT: 25,
+    // The till shows the whole outlet menu, so that list starts with the largest page
+    DEFAULT_MENU_LIMIT: 100,
     MAX_LIST_LIMIT: 100,
 } as const;
+
+export const SEARCH_MAX_LENGTH = 100;
+
+// The only kind of id the API accepts and returns
+export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const MS_PER_SECOND = 1000;
 

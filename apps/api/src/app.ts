@@ -4,9 +4,16 @@ import config from "./config/config";
 import { API_PREFIX, JSON_BODY_LIMIT } from "./constant/api";
 import { ERROR_CODES } from "./constant/error";
 import { initializeDBConnection } from "./infra/db";
-import { newPostRepo } from "./repo/post";
-import { newPostService } from "./service/post";
-import { newPostV1Controller } from "./web/controller/v1/post";
+import { newAssignmentRepo } from "./repo/assignment";
+import { newMenuItemRepo } from "./repo/menu-item";
+import { newOutletRepo } from "./repo/outlet";
+import { newAssignmentService } from "./service/assignment";
+import { newMenuItemService } from "./service/menu-item";
+import { newOutletService } from "./service/outlet";
+import { newAppConfigV1Controller } from "./web/controller/v1/app-config";
+import { newAssignmentV1Controller } from "./web/controller/v1/assignment";
+import { newMenuItemV1Controller } from "./web/controller/v1/menu-item";
+import { newOutletV1Controller } from "./web/controller/v1/outlet";
 import { NotFoundException } from "./web/exception/not-found-exception";
 import { globalErrorHandler } from "./web/middleware/global-error-handler";
 import { newRateLimit } from "./web/middleware/rate-limit";
@@ -33,17 +40,27 @@ export const appReady: Promise<void> = (async () => {
     await initializeDBConnection();
 
     // Initialize Repo
-    const postRepo = await newPostRepo();
+    const outletRepo = await newOutletRepo();
+    const menuItemRepo = await newMenuItemRepo();
+    const assignmentRepo = await newAssignmentRepo();
 
     // Initialize Service
-    const postService = await newPostService(postRepo);
+    const outletService = await newOutletService(outletRepo);
+    const menuItemService = await newMenuItemService(menuItemRepo);
+    const assignmentService = await newAssignmentService(assignmentRepo, outletService, menuItemService);
 
     // Initialize Controller
-    const postV1Controller = await newPostV1Controller(postService);
+    const appConfigV1Controller = await newAppConfigV1Controller(config.BUSINESS);
+    const outletV1Controller = await newOutletV1Controller(outletService);
+    const menuItemV1Controller = await newMenuItemV1Controller(menuItemService);
+    const assignmentV1Controller = await newAssignmentV1Controller(assignmentService);
 
     // Initialize Router
     const v1Router = await newV1Router({
-        postController: postV1Controller,
+        appConfigController: appConfigV1Controller,
+        outletController: outletV1Controller,
+        menuItemController: menuItemV1Controller,
+        assignmentController: assignmentV1Controller,
     });
 
     app.use(API_PREFIX, v1Router);

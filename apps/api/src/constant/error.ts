@@ -8,6 +8,10 @@ export enum ERROR_CODES {
     E_UNPROCESSABLE = "E_UNPROCESSABLE",
     E_TOO_MANY_REQUESTS = "E_TOO_MANY_REQUESTS",
     E_PAYLOAD_TOO_LARGE = "E_PAYLOAD_TOO_LARGE",
+    E_OUTLET_NOT_FOUND = "E_OUTLET_NOT_FOUND",
+    E_MENU_ITEM_NOT_FOUND = "E_MENU_ITEM_NOT_FOUND",
+    E_DUPLICATE_OUTLET_CODE = "E_DUPLICATE_OUTLET_CODE",
+    E_DUPLICATE_SKU = "E_DUPLICATE_SKU",
 }
 
 export const errorMessages: Record<ERROR_CODES, { message: string }> = {
@@ -37,6 +41,18 @@ export const errorMessages: Record<ERROR_CODES, { message: string }> = {
     },
     E_PAYLOAD_TOO_LARGE: {
         message: "The request body is too large.",
+    },
+    E_OUTLET_NOT_FOUND: {
+        message: "Outlet not found",
+    },
+    E_MENU_ITEM_NOT_FOUND: {
+        message: "Menu item not found",
+    },
+    E_DUPLICATE_OUTLET_CODE: {
+        message: "An outlet with this code already exists",
+    },
+    E_DUPLICATE_SKU: {
+        message: "A menu item with this SKU already exists",
     },
 };
 
