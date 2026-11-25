@@ -2,6 +2,7 @@ import "dotenv/config";
 import Joi from "joi";
 import { Options } from "sequelize";
 import { DEFAULT_PORT } from "../constant/api";
+import { AUTH_DEFAULTS, EXAMPLE_JWT_SECRET, JWT_SECRET_MIN_LENGTH, TOKEN_LIFETIME_PATTERN } from "../constant/auth";
 import { BUSINESS_DEFAULTS, CURRENCY_PATTERN, VAT_BPS_MAX } from "../constant/business";
 import { DATABASE_NAME_PATTERN, NodeEnv, TEST_DATABASE_SUFFIX } from "../constant/env";
 
@@ -36,14 +37,22 @@ export interface BusinessConfig {
     RECEIPT_FOOTER: string;
 }
 
+export interface AuthConfig {
+    JWT_SECRET: string;
+    // How long a login lasts, e.g. "8h"
+    JWT_EXPIRES_IN: string;
+    LOGIN_RATE_LIMIT_PER_MINUTE: number;
+}
+
 interface Config extends AppConfig {
     SEQUELIZE: DatabaseConfig;
     SEQUELIZEOPTIONS: Options;
     SECURITY: SecurityConfig;
+    AUTH: AuthConfig;
     BUSINESS: BusinessConfig;
 }
 
-interface Env extends AppConfig, DatabaseConfig, SecurityConfig, BusinessConfig {
+interface Env extends AppConfig, DatabaseConfig, SecurityConfig, AuthConfig, BusinessConfig {
     // Hosting platforms set PORT; APPLICATION_SERVER_PORT wins when both are set
     PORT?: number;
 }
@@ -93,6 +102,18 @@ const envSchema = Joi.object<Env>({
     RATE_LIMIT_PER_MINUTE: Joi.number().integer().min(1).max(100000).default(600),
     TRUST_PROXY: Joi.number().integer().min(0).default(0),
 
+    // No default on purpose: a built-in secret would let anyone create a login token
+    JWT_SECRET: Joi.string()
+        .min(JWT_SECRET_MIN_LENGTH)
+        .required()
+        .when("NODE_ENV", { is: NodeEnv.PRODUCTION, then: Joi.string().invalid(EXAMPLE_JWT_SECRET) }),
+    JWT_EXPIRES_IN: Joi.string().pattern(TOKEN_LIFETIME_PATTERN).default(AUTH_DEFAULTS.TOKEN_LIFETIME),
+    LOGIN_RATE_LIMIT_PER_MINUTE: Joi.number()
+        .integer()
+        .min(1)
+        .max(100000)
+        .default(AUTH_DEFAULTS.LOGIN_RATE_LIMIT_PER_MINUTE),
+
     BUSINESS_TIMEZONE: timeZone.default(BUSINESS_DEFAULTS.TIMEZONE),
     CURRENCY: Joi.string().pattern(CURRENCY_PATTERN).default(BUSINESS_DEFAULTS.CURRENCY),
     VAT_BPS: Joi.number().integer().min(0).max(VAT_BPS_MAX).default(BUSINESS_DEFAULTS.VAT_BPS),
@@ -132,6 +153,11 @@ const config: Config = {
         WEB_ORIGIN: env.WEB_ORIGIN,
         RATE_LIMIT_PER_MINUTE: env.RATE_LIMIT_PER_MINUTE,
         TRUST_PROXY: env.TRUST_PROXY,
+    },
+    AUTH: {
+        JWT_SECRET: env.JWT_SECRET,
+        JWT_EXPIRES_IN: env.JWT_EXPIRES_IN,
+        LOGIN_RATE_LIMIT_PER_MINUTE: env.LOGIN_RATE_LIMIT_PER_MINUTE,
     },
     BUSINESS: {
         BUSINESS_TIMEZONE: env.BUSINESS_TIMEZONE,

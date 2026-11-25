@@ -29,6 +29,14 @@ Requests go **router → controller → service → repo → model**. Keep each 
 -   A record the API shows has `public_id` (UUID). In JSON it is `id`; routes and bodies use it.
 -   Controllers never send a model or repository record as it is: it goes through a mapper in `src/web/dto`.
 
+## Access
+
+-   In `src/web/router/v1/index.ts`, routes added after `v1.use(authenticate)` need a signed-in user.
+-   Every one of those routes also names who may use it (`headOfficeOnly`, `allowRoles`, `allowAtOutlet`). A route
+    under `/outlets/:outletId` must stop staff of another outlet.
+-   Never log or return a password, a password hash or a token (the login answer is the one place a token is sent).
+-   `src/cli` holds commands such as the staff accounts: like a controller, they check input and call one service.
+
 ## Database
 
 -   Tables come from migrations in `src/infra/migrations` (raw SQL), never from `sequelize.sync()`.

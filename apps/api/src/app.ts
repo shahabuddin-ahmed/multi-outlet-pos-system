@@ -7,14 +7,18 @@ import { initializeDBConnection } from "./infra/db";
 import { newAssignmentRepo } from "./repo/assignment";
 import { newMenuItemRepo } from "./repo/menu-item";
 import { newOutletRepo } from "./repo/outlet";
+import { newUserRepo } from "./repo/user";
 import { newAssignmentService } from "./service/assignment";
+import { newAuthService } from "./service/auth";
 import { newMenuItemService } from "./service/menu-item";
 import { newOutletService } from "./service/outlet";
 import { newAppConfigV1Controller } from "./web/controller/v1/app-config";
 import { newAssignmentV1Controller } from "./web/controller/v1/assignment";
+import { newAuthV1Controller } from "./web/controller/v1/auth";
 import { newMenuItemV1Controller } from "./web/controller/v1/menu-item";
 import { newOutletV1Controller } from "./web/controller/v1/outlet";
 import { NotFoundException } from "./web/exception/not-found-exception";
+import { newAuthenticate } from "./web/middleware/authenticate";
 import { globalErrorHandler } from "./web/middleware/global-error-handler";
 import { newRateLimit } from "./web/middleware/rate-limit";
 import { requestId } from "./web/middleware/request-id";
@@ -43,13 +47,16 @@ export const appReady: Promise<void> = (async () => {
     const outletRepo = await newOutletRepo();
     const menuItemRepo = await newMenuItemRepo();
     const assignmentRepo = await newAssignmentRepo();
+    const userRepo = await newUserRepo();
 
     // Initialize Service
+    const authService = await newAuthService(userRepo, config.AUTH);
     const outletService = await newOutletService(outletRepo);
     const menuItemService = await newMenuItemService(menuItemRepo);
     const assignmentService = await newAssignmentService(assignmentRepo, outletService, menuItemService);
 
     // Initialize Controller
+    const authV1Controller = await newAuthV1Controller(authService);
     const appConfigV1Controller = await newAppConfigV1Controller(config.BUSINESS);
     const outletV1Controller = await newOutletV1Controller(outletService);
     const menuItemV1Controller = await newMenuItemV1Controller(menuItemService);
@@ -57,6 +64,10 @@ export const appReady: Promise<void> = (async () => {
 
     // Initialize Router
     const v1Router = await newV1Router({
+        authenticate: newAuthenticate(authService),
+        // Slows down password guessing, on top of the general limit
+        loginRateLimit: newRateLimit(config.AUTH.LOGIN_RATE_LIMIT_PER_MINUTE),
+        authController: authV1Controller,
         appConfigController: appConfigV1Controller,
         outletController: outletV1Controller,
         menuItemController: menuItemV1Controller,

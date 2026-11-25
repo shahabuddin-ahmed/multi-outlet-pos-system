@@ -3,11 +3,15 @@ import { Express } from "express";
 import { QueryTypes } from "sequelize";
 import request from "supertest";
 import { API_PREFIX, UUID_PATTERN } from "../../../../constant/api";
+import { UserRole } from "../../../../constant/auth";
 import newSequelize from "../../../../infra/sequelize";
 import { resetTestData } from "../../../../infra/test/test-database";
 import { startTestApp } from "./test-app";
+import { signInAs } from "./test-auth";
 
 let app: Express;
+// Everything here is head office work; who may do what is tested in auth.integ.test.ts
+let authorization: string;
 
 beforeAll(async () => {
     app = await startTestApp();
@@ -15,16 +19,20 @@ beforeAll(async () => {
 
 beforeEach(async () => {
     await resetTestData();
+    authorization = `Bearer ${(await signInAs(app, UserRole.HQ_ADMIN)).token}`;
 });
 
 afterAll(async () => {
     await newSequelize().close();
 });
 
-const get = (path: string) => request(app).get(`${API_PREFIX}${path}`);
-const post = (path: string, body: object) => request(app).post(`${API_PREFIX}${path}`).send(body);
-const patch = (path: string, body: object) => request(app).patch(`${API_PREFIX}${path}`).send(body);
-const put = (path: string, body: object) => request(app).put(`${API_PREFIX}${path}`).send(body);
+const url = (path: string) => `${API_PREFIX}${path}`;
+const get = (path: string) => request(app).get(url(path)).set("Authorization", authorization);
+const post = (path: string, body: object) =>
+    request(app).post(url(path)).set("Authorization", authorization).send(body);
+const patch = (path: string, body: object) =>
+    request(app).patch(url(path)).set("Authorization", authorization).send(body);
+const put = (path: string, body: object) => request(app).put(url(path)).set("Authorization", authorization).send(body);
 
 const createOutlet = async (changes: object = {}) => {
     const res = await post("/outlets", { code: "DHK", name: "Dhanmondi", ...changes });
