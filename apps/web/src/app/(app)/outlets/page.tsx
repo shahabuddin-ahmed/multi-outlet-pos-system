@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { ComingSoon } from '@/components/shared/coming-soon';
+import { OutletsView } from '@/features/outlets/outlets-view';
 
 export const metadata: Metadata = { title: 'Outlets' };
 
 export default function OutletsPage() {
-  return <ComingSoon title="Outlets" text="The places that sell" />;
+  return <OutletsView />;
 }

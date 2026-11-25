@@ -1,8 +1,15 @@
 import type { Metadata } from 'next';
-import { ComingSoon } from '@/components/shared/coming-soon';
+import { Suspense } from 'react';
+import { PageState } from '@/components/shared/page-state';
+import { AssignView } from '@/features/assign/assign-view';
 
 export const metadata: Metadata = { title: 'Assign menu' };
 
 export default function AssignPage() {
-  return <ComingSoon title="Assign menu" text="What each outlet sells, and at which price" />;
+  // The view reads the address (?outlet=), which is only known in the browser
+  return (
+    <Suspense fallback={<PageState message="Loading…" />}>
+      <AssignView />
+    </Suspense>
+  );
 }
