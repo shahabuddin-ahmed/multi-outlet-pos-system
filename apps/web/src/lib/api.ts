@@ -1,5 +1,19 @@
 import { getToken } from '@/lib/token';
-import type { ApiEnvelope, AppConfig, HealthReport, LoginResult, User } from '@/types';
+import type {
+  ApiEnvelope,
+  AppConfig,
+  Assignment,
+  AssignmentInput,
+  HealthReport,
+  ListQuery,
+  LoginResult,
+  MenuItem,
+  MenuItemInput,
+  Outlet,
+  OutletInput,
+  Paged,
+  User
+} from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
@@ -74,12 +88,41 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return payload.response;
 }
 
+// "?offset=0&limit=25", leaving out what is empty
+function queryOf(values: object): string {
+  const params = new URLSearchParams();
+  for (const [name, value] of Object.entries(values)) {
+    if (value !== undefined && value !== '') {
+      params.set(name, String(value));
+    }
+  }
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
+const send = <T>(method: 'POST' | 'PUT' | 'PATCH', path: string, body: object) =>
+  request<T>(path, { method, body: JSON.stringify(body) });
+
 // Every API call lives here, so a page never builds a URL itself
 export const api = {
   health: () => request<HealthReport>('/health'),
   appConfig: () => request<AppConfig>('/app-config'),
 
-  login: (email: string, password: string) =>
-    request<LoginResult>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
-  me: () => request<User>('/auth/me')
+  login: (email: string, password: string) => send<LoginResult>('POST', '/auth/login', { email, password }),
+  me: () => request<User>('/auth/me'),
+
+  listOutlets: (query: ListQuery) => request<Paged<Outlet>>(`/outlets${queryOf(query)}`),
+  createOutlet: (outlet: OutletInput & { code: string }) => send<Outlet>('POST', '/outlets', outlet),
+  updateOutlet: (id: string, changes: Partial<OutletInput>) => send<Outlet>('PATCH', `/outlets/${id}`, changes),
+
+  listMenuItems: (query: ListQuery) => request<Paged<MenuItem>>(`/menu-items${queryOf(query)}`),
+  createMenuItem: (item: MenuItemInput & { sku: string }) => send<MenuItem>('POST', '/menu-items', item),
+  updateMenuItem: (id: string, changes: Partial<MenuItemInput>) =>
+    send<MenuItem>('PATCH', `/menu-items/${id}`, changes),
+
+  listAssignments: (outletId: string, query: ListQuery) =>
+    request<Paged<Assignment>>(`/outlets/${outletId}/assignments${queryOf(query)}`),
+  // Assigns the item, or changes how the outlet sells it
+  saveAssignment: (outletId: string, menuItemId: string, assignment: AssignmentInput) =>
+    send<Assignment>('PUT', `/outlets/${outletId}/assignments/${menuItemId}`, assignment)
 };

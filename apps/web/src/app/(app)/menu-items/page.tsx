@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { ComingSoon } from '@/components/shared/coming-soon';
+import { MenuItemsView } from '@/features/menu-items/menu-items-view';
 
 export const metadata: Metadata = { title: 'Menu items' };
 
 export default function MenuItemsPage() {
-  return <ComingSoon title="Menu items" text="The master menu of head office" />;
+  return <MenuItemsView />;
 }

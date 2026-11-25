@@ -19,6 +19,8 @@ interface ApiData<T> {
   loading: boolean;
   // Loads again: after a change, or to retry after an error
   reload: () => void;
+  // Changes what is shown without loading, with an answer the API has just given
+  update: (change: (data: T) => T) => void;
 }
 
 // Runs `load` again whenever it changes (wrap it in useMemo or useCallback).
@@ -50,12 +52,16 @@ export function useApiData<T>(load: (() => Promise<T>) | null): ApiData<T> {
   }, [load, version]);
 
   const reload = useCallback(() => setVersion((current) => current + 1), []);
+  const update = useCallback((change: (data: T) => T) => {
+    setResult((current) => (current && current.data !== null ? { ...current, data: change(current.data) } : current));
+  }, []);
   const fresh = result?.load === load && result?.version === version;
   return {
     data: result?.data ?? null,
     error: fresh ? result.error : '',
     errorCode: fresh ? result.errorCode : '',
     loading: load !== null && !fresh,
-    reload
+    reload,
+    update
   };
 }
