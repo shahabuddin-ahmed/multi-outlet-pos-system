@@ -1,4 +1,4 @@
-import type { ApiEnvelope, HealthReport, Paged, Post, PostInput } from '@/types';
+import type { ApiEnvelope, HealthReport } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
@@ -45,10 +45,5 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 // Every API call lives here, so a page never builds a URL itself
 export const api = {
-  health: () => request<HealthReport>('/health'),
-
-  getPosts: (offset: number, limit: number) =>
-    request<Paged<Post>>(`/posts?${new URLSearchParams({ offset: String(offset), limit: String(limit) })}`),
-  createPost: (post: PostInput) => request<Post>('/posts', { method: 'POST', body: JSON.stringify(post) }),
-  deletePost: (id: number) => request<{ deleted: boolean }>(`/posts/${id}`, { method: 'DELETE' })
+  health: () => request<HealthReport>('/health')
 };

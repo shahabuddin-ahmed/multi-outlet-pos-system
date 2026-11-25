@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
-import { FileText, House, type LucideIcon } from 'lucide-react';
+import { House, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -21,10 +21,7 @@ interface NavSection {
 const sections: NavSection[] = [
   {
     label: 'Workspace',
-    items: [
-      { href: '/', label: 'Overview', icon: House },
-      { href: '/posts', label: 'Sample posts', icon: FileText }
-    ]
+    items: [{ href: '/', label: 'Overview', icon: House }]
   }
 ];
 

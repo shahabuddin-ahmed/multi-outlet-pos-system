@@ -45,8 +45,3 @@ The API must run on port 4000 (`NEXT_PUBLIC_API_URL`). Run `npx tsc --noEmit` an
 
 2 spaces, single quotes, no trailing commas (Prettier: `yarn format:check`). Format only the files you change, never
 the whole repository.
-
-## Sample code
-
-`posts` (`features/posts`, `app/posts`, the posts calls in `lib/api.ts`, `Post` in `types`) is a placeholder that proves
-the web app, the API and the database work together. Copy its pattern for a real feature, then delete it.
