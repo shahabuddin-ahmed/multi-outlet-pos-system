@@ -25,6 +25,9 @@ export interface MovementRecord {
     userName: string | null;
     note: string | null;
     createdAt: Date;
+    // Both set only for a movement caused by a sale
+    receiptNo: number | null;
+    outletCode: string | null;
 }
 
 // Internal integer ids
@@ -34,6 +37,13 @@ export interface NewMovement extends AssignmentKey {
     reason: StockReason;
     userId: number | null;
     note: string | null;
+}
+
+export interface NewSaleMovement extends AssignmentKey {
+    delta: number;
+    quantityAfter: number;
+    userId: number;
+    saleId: number;
 }
 
 export interface LowStockRecord {
@@ -52,6 +62,7 @@ export interface InventoryRepoInterface {
     listByOutlet(outletId: number, query: ListQuery): Promise<Rows<StockRecord>>;
     changeQuantity(key: AssignmentKey, delta: number, transaction: Transaction): Promise<number | null>;
     addMovement(movement: NewMovement, transaction: Transaction): Promise<MovementRecord>;
+    addSaleMovements(movements: NewSaleMovement[], transaction: Transaction): Promise<void>;
     listMovements(key: AssignmentKey, query: ListQuery): Promise<Rows<MovementRecord>>;
     listLowStock(threshold: number, query: ListQuery): Promise<Rows<LowStockRecord>>;
 }
@@ -130,18 +141,42 @@ export class InventoryRepo implements InventoryRepoInterface {
                  (outlet_id, menu_item_id, delta, quantity_after, reason, user_id, note)
              VALUES (:outletId, :menuItemId, :delta, :quantityAfter, :reason, :userId, :note)
              RETURNING ${movementColumns("stock_movements")},
-                 (SELECT full_name FROM users u WHERE u.id = stock_movements.user_id) AS "userName"`,
+                 (SELECT full_name FROM users u WHERE u.id = stock_movements.user_id) AS "userName",
+                 NULL AS "receiptNo",
+                 NULL AS "outletCode"`,
             { replacements: { ...movement }, type: QueryTypes.SELECT, transaction }
         );
         return rows[0];
+    }
+
+    public async addSaleMovements(movements: NewSaleMovement[], transaction: Transaction): Promise<void> {
+        await newSequelize()
+            .getQueryInterface()
+            .bulkInsert(
+                "stock_movements",
+                movements.map((movement) => ({
+                    outlet_id: movement.outletId,
+                    menu_item_id: movement.menuItemId,
+                    delta: movement.delta,
+                    quantity_after: movement.quantityAfter,
+                    reason: StockReason.SALE,
+                    sale_id: movement.saleId,
+                    user_id: movement.userId,
+                })),
+                { transaction }
+            );
     }
 
     // Newest first. Ids are given while the stock row is locked, so they follow the order of the changes.
     public async listMovements(key: AssignmentKey, query: ListQuery): Promise<Rows<MovementRecord>> {
         return this.page<MovementRecord>(
             {
-                columns: `${movementColumns("s")}, u.full_name AS "userName"`,
-                from: "FROM stock_movements s LEFT JOIN users u ON u.id = s.user_id",
+                columns: `${movementColumns("s")}, u.full_name AS "userName",
+                    sa.receipt_no AS "receiptNo", o.code AS "outletCode"`,
+                from: `FROM stock_movements s
+                    LEFT JOIN users u ON u.id = s.user_id
+                    LEFT JOIN sales sa ON sa.id = s.sale_id
+                    LEFT JOIN outlets o ON o.id = sa.outlet_id`,
                 where: "s.outlet_id = :outletId AND s.menu_item_id = :menuItemId",
                 orderBy: "s.id DESC",
                 replacements: { ...key },

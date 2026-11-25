@@ -15,6 +15,9 @@ export const assertTestDatabase = (): void => {
 
 // A new table with business data goes in this list
 const BUSINESS_TABLES = [
+    "sale_idempotency",
+    "sale_items",
+    "sales",
     "stock_movements",
     "users",
     "inventory",

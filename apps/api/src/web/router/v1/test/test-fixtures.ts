@@ -13,8 +13,8 @@ const assignmentService = new AssignmentService(new AssignmentRepo(), outletServ
 export const newOutlet = (code: string) =>
     outletService.create({ code, name: `Outlet ${code}`, address: null, phone: null, isActive: true });
 
-export const newItem = (sku: string) =>
-    menuItemService.create({ sku, name: `Item ${sku}`, basePriceCents: 10000, isActive: true });
+export const newItem = (sku: string, basePriceCents = 10000) =>
+    menuItemService.create({ sku, name: `Item ${sku}`, basePriceCents, isActive: true });
 
 export const assignItem = (outletPublicId: string, itemPublicId: string, isAvailable = true) =>
     assignmentService.save(outletPublicId, itemPublicId, { priceOverrideCents: null, isAvailable });

@@ -13,6 +13,7 @@ export interface AuthOutlet {
     publicId: string;
     code: string;
     name: string;
+    isActive: boolean;
 }
 
 // The signed-in user of a request
@@ -53,6 +54,9 @@ export class AuthService implements AuthServiceInterface {
             throw new UnauthorizedException(ERROR_CODES.E_INVALID_CREDENTIALS);
         }
         const user = this.toAuthUser(account);
+        if (user.outlet && !user.outlet.isActive) {
+            throw new ForbiddenException(ERROR_CODES.E_OUTLET_INACTIVE);
+        }
         return { token: this.sign(account.publicId), user };
     }
 
@@ -93,13 +97,16 @@ export class AuthService implements AuthServiceInterface {
 
     private toAuthUser(account: AccountRecord): AuthUser {
         const { id, publicId, email, fullName, role, outletId, outletPublicId, outletCode, outletName } = account;
-        if (outletId !== null && !account.outletIsActive) {
-            throw new ForbiddenException(ERROR_CODES.E_OUTLET_INACTIVE);
-        }
         const outlet =
             outletId === null
                 ? null
-                : { id: outletId, publicId: outletPublicId!, code: outletCode!, name: outletName! };
+                : {
+                      id: outletId,
+                      publicId: outletPublicId!,
+                      code: outletCode!,
+                      name: outletName!,
+                      isActive: account.outletIsActive === true,
+                  };
         return { id, publicId, email, fullName, role, outlet };
     }
 }

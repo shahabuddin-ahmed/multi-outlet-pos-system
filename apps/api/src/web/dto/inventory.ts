@@ -1,5 +1,6 @@
 import { LOW_STOCK_THRESHOLD, StockReason } from "../../constant/stock";
 import { LowStockRecord, MovementRecord, StockRecord } from "../../repo/inventory";
+import { receiptCodeOf } from "../../utils/utility";
 
 export interface StockDto {
     menuItemId: string;
@@ -19,6 +20,8 @@ export interface StockMovementDto {
     reason: StockReason;
     userName: string | null;
     note: string | null;
+    // Set when a sale caused the movement
+    receiptCode: string | null;
     createdAt: Date;
 }
 
@@ -49,6 +52,8 @@ export const toStockMovementDto = (record: MovementRecord): StockMovementDto => 
     reason: record.reason,
     userName: record.userName,
     note: record.note,
+    receiptCode:
+        record.outletCode && record.receiptNo !== null ? receiptCodeOf(record.outletCode, record.receiptNo) : null,
     createdAt: record.createdAt,
 });
 

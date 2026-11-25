@@ -7,7 +7,10 @@ import { InventoryControllerInterface } from "../../controller/v1/inventory";
 import { MenuItemControllerInterface } from "../../controller/v1/menu-item";
 import { OutletControllerInterface } from "../../controller/v1/outlet";
 import { ReportControllerInterface } from "../../controller/v1/report";
+import { SaleControllerInterface } from "../../controller/v1/sale";
 import { NotFoundException } from "../../exception/not-found-exception";
+import { asyncHandler } from "../../middleware/async-handler";
+import { requireOpenOutlet, staffAtOutlet } from "../../middleware/authorize";
 import { newAppConfigRouter } from "./app-config";
 import { newAssignmentRouter } from "./assignment";
 import { newAuthRouter } from "./auth";
@@ -16,6 +19,7 @@ import { newInventoryRouter } from "./inventory";
 import { newMenuItemRouter } from "./menu-item";
 import { newOutletRouter } from "./outlet";
 import { newReportRouter } from "./report";
+import { newOutletSaleRouter, newSaleRouter } from "./sale";
 
 export interface V1Dependencies {
     authenticate: RequestHandler;
@@ -27,6 +31,7 @@ export interface V1Dependencies {
     assignmentController: AssignmentControllerInterface;
     inventoryController: InventoryControllerInterface;
     reportController: ReportControllerInterface;
+    saleController: SaleControllerInterface;
 }
 
 export const newV1Router = async ({
@@ -39,6 +44,7 @@ export const newV1Router = async ({
     assignmentController,
     inventoryController,
     reportController,
+    saleController,
 }: V1Dependencies): Promise<Router> => {
     const v1 = Router();
 
@@ -49,9 +55,15 @@ export const newV1Router = async ({
 
     // Everything below needs a signed-in user, and each route says who may use it
     v1.use(authenticate);
+    // The one route that staff of a switched-off outlet still reach: a retry of a sale made just before
+    // must get its answer. The service refuses a new sale there.
+    v1.post("/outlets/:outletId/sales", staffAtOutlet, asyncHandler(saleController.create));
+    v1.use(requireOpenOutlet);
     v1.use("/outlets", await newOutletRouter(outletController));
     v1.use("/outlets/:outletId", await newAssignmentRouter(assignmentController));
     v1.use("/outlets/:outletId", await newInventoryRouter(inventoryController));
+    v1.use("/outlets/:outletId", await newOutletSaleRouter(saleController));
+    v1.use("/sales", await newSaleRouter(saleController));
     v1.use("/menu-items", await newMenuItemRouter(menuItemController));
     v1.use("/reports", await newReportRouter(reportController));
 

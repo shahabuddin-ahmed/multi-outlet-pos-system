@@ -5,6 +5,7 @@ import { HttpStatus } from "../../constant/http";
 import config from "../../config/config";
 import logger from "../../infra/logger";
 import { ResponseType } from "../controller/controller";
+import { HttpException } from "../exception/http-exception";
 import { pathOf } from "./request-logger";
 
 interface KnownError {
@@ -60,6 +61,8 @@ export const globalErrorHandler = (err: any, req: Request, res: Response, _next:
     }
 
     const { code, message, errors } = detailsOf(err, knownError, isServerError);
-    const body: ResponseType = { code, message, response: null, errors };
+    // Only our own exceptions carry data for the client
+    const response = !isServerError && err instanceof HttpException ? (err.details ?? null) : null;
+    const body: ResponseType = { code, message, response, errors };
     return res.status(statusCode).send(body);
 };

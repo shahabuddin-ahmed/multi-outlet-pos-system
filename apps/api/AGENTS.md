@@ -47,6 +47,8 @@ Requests go **router → controller → service → repo → model**. Keep each 
     repository, with every value passed through `replacements`.
 -   Stock changes only through `InventoryRepo.changeQuantity` (one conditional `UPDATE`), with its
     `stock_movements` row written in the same transaction.
+-   Inside a transaction every query takes that transaction; a second pool connection can leave a busy pool stuck.
+-   A sale takes its locks in one order: retry key, stock rows by internal item id, receipt counter last.
 -   Records are switched off (`is_active`), never deleted; foreign keys are `ON DELETE RESTRICT`.
 -   Rules that must always hold (no negative stock, one receipt number per outlet) belong in the database as
     `CHECK` and `UNIQUE` constraints, as well as in the service.
