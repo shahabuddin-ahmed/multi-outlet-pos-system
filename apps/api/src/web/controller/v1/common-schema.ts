@@ -14,14 +14,26 @@ export const menuItemParamsSchema = Joi.object({
     menuItemId: publicIdSchema.required(),
 });
 
+// One menu item at one outlet
+export const outletItemParamsSchema = Joi.object({
+    outletId: publicIdSchema.required(),
+    menuItemId: publicIdSchema.required(),
+});
+
+const pageFields = (defaultLimit: number) => ({
+    offset: Joi.number().integer().min(0).default(0),
+    limit: Joi.number().integer().min(1).max(PAGINATION.MAX_LIST_LIMIT).default(defaultLimit),
+});
+
 const newListQuerySchema = (defaultLimit: number) =>
     Joi.object({
         // An empty search box means "no search"
         search: Joi.string().trim().max(SEARCH_MAX_LENGTH).empty(""),
-        offset: Joi.number().integer().min(0).default(0),
-        limit: Joi.number().integer().min(1).max(PAGINATION.MAX_LIST_LIMIT).default(defaultLimit),
+        ...pageFields(defaultLimit),
     });
 
+// For lists with a fixed order and no search box
+export const pageQuerySchema = Joi.object(pageFields(PAGINATION.DEFAULT_LIST_LIMIT));
 export const listQuerySchema = newListQuerySchema(PAGINATION.DEFAULT_LIST_LIMIT);
 export const menuQuerySchema = newListQuerySchema(PAGINATION.DEFAULT_MENU_LIMIT);
 

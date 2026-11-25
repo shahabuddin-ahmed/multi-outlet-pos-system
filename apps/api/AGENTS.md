@@ -45,6 +45,8 @@ Requests go **router → controller → service → repo → model**. Keep each 
 -   Columns are `snake_case` in the database; models use `underscored: true`, so code uses camelCase.
 -   Simple one-table records use a model. Joins and writes that must be safe under concurrency use SQL in the
     repository, with every value passed through `replacements`.
+-   Stock changes only through `InventoryRepo.changeQuantity` (one conditional `UPDATE`), with its
+    `stock_movements` row written in the same transaction.
 -   Records are switched off (`is_active`), never deleted; foreign keys are `ON DELETE RESTRICT`.
 -   Rules that must always hold (no negative stock, one receipt number per outlet) belong in the database as
     `CHECK` and `UNIQUE` constraints, as well as in the service.

@@ -9,9 +9,9 @@ import { Controller } from "../controller";
 import {
     listQuerySchema,
     menuQuerySchema,
+    outletItemParamsSchema,
     outletParamsSchema,
     priceCentsSchema,
-    publicIdSchema,
 } from "./common-schema";
 
 export interface AssignmentControllerInterface {
@@ -19,11 +19,6 @@ export interface AssignmentControllerInterface {
     list(req: Request, res: Response): Promise<any>;
     menu(req: Request, res: Response): Promise<any>;
 }
-
-const assignmentParamsSchema = Joi.object({
-    outletId: publicIdSchema.required(),
-    menuItemId: publicIdSchema.required(),
-});
 
 // PUT replaces the whole assignment, so both fields are required. null removes the outlet price.
 const saveSchema = Joi.object({
@@ -40,7 +35,7 @@ export class AssignmentController extends Controller implements AssignmentContro
     }
 
     async save(req: Request, res: Response): Promise<any> {
-        const { value: params } = await this.validateRequest(assignmentParamsSchema, req.params);
+        const { value: params } = await this.validateRequest(outletItemParamsSchema, req.params);
         const { value: body } = await this.validateRequest(saveSchema, req.body);
         const { assignment, created } = await this.assignmentService.save(params.outletId, params.menuItemId, body);
         return this.sendResponse(

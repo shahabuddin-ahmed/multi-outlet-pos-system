@@ -24,3 +24,4 @@ export const allowAtOutlet =
 
 export const headOfficeOnly = allowRoles(UserRole.HQ_ADMIN);
 export const anyoneAtOutlet = allowAtOutlet(...Object.values(UserRole));
+export const managementAtOutlet = allowAtOutlet(UserRole.HQ_ADMIN, UserRole.OUTLET_MANAGER);
