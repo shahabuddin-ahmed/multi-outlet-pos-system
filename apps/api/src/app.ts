@@ -8,6 +8,7 @@ import { newAssignmentRepo } from "./repo/assignment";
 import { newInventoryRepo } from "./repo/inventory";
 import { newMenuItemRepo } from "./repo/menu-item";
 import { newOutletRepo } from "./repo/outlet";
+import { newReportRepo } from "./repo/report";
 import { newSaleRepo } from "./repo/sale";
 import { newSaleClaimRepo } from "./repo/sale-claim";
 import { newUserRepo } from "./repo/user";
@@ -16,6 +17,7 @@ import { newAuthService } from "./service/auth";
 import { newInventoryService } from "./service/inventory";
 import { newMenuItemService } from "./service/menu-item";
 import { newOutletService } from "./service/outlet";
+import { newReportService } from "./service/report";
 import { newSaleService } from "./service/sale";
 import { newAppConfigV1Controller } from "./web/controller/v1/app-config";
 import { newAssignmentV1Controller } from "./web/controller/v1/assignment";
@@ -59,6 +61,7 @@ export const appReady: Promise<void> = (async () => {
     const inventoryRepo = await newInventoryRepo();
     const saleRepo = await newSaleRepo();
     const saleClaimRepo = await newSaleClaimRepo();
+    const reportRepo = await newReportRepo();
 
     // Initialize Service
     const authService = await newAuthService(userRepo, config.AUTH);
@@ -74,6 +77,7 @@ export const appReady: Promise<void> = (async () => {
         outletService,
         config.BUSINESS
     );
+    const reportService = await newReportService(reportRepo, outletService, config.BUSINESS);
 
     // Initialize Controller
     const authV1Controller = await newAuthV1Controller(authService);
@@ -82,7 +86,7 @@ export const appReady: Promise<void> = (async () => {
     const menuItemV1Controller = await newMenuItemV1Controller(menuItemService);
     const assignmentV1Controller = await newAssignmentV1Controller(assignmentService);
     const inventoryV1Controller = await newInventoryV1Controller(inventoryService);
-    const reportV1Controller = await newReportV1Controller(inventoryService);
+    const reportV1Controller = await newReportV1Controller(reportService, inventoryService);
     const saleV1Controller = await newSaleV1Controller(saleService);
 
     // Initialize Router

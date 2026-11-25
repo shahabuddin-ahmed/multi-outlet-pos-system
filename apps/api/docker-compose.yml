@@ -23,7 +23,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile.dev
-        command: sh -c "yarn db:migrate && yarn db:seed && yarn dev"
+        command: sh -c "yarn db:migrate && yarn db:seed && yarn demo:seed && yarn dev"
         restart: unless-stopped
         depends_on:
             db:

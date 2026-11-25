@@ -8,6 +8,8 @@ export const newReportRouter = async (reportController: ReportControllerInterfac
 
     // Reports compare outlets, so they are for head office
     router.use(headOfficeOnly);
+    router.get("/revenue-by-outlet", asyncHandler(reportController.revenueByOutlet));
+    router.get("/top-items", asyncHandler(reportController.topItems));
     router.get("/low-stock", asyncHandler(reportController.lowStock));
 
     return router;

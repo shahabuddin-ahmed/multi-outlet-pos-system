@@ -50,11 +50,14 @@ interface Config extends AppConfig {
     SECURITY: SecurityConfig;
     AUTH: AuthConfig;
     BUSINESS: BusinessConfig;
+    // Adds made-up data, with a public password, to an empty database
+    SEED_DEMO_DATA: boolean;
 }
 
 interface Env extends AppConfig, DatabaseConfig, SecurityConfig, AuthConfig, BusinessConfig {
     // Hosting platforms set PORT; APPLICATION_SERVER_PORT wins when both are set
     PORT?: number;
+    SEED_DEMO_DATA: boolean;
 }
 
 const databaseName = Joi.string().pattern(DATABASE_NAME_PATTERN).max(63);
@@ -75,6 +78,8 @@ const envSchema = Joi.object<Env>({
     APPLICATION_SERVER_PORT: Joi.number().port(),
     PORT: Joi.number().port(),
     APP_FORCE_SHUTDOWN_SECOND: Joi.number().integer().min(1).default(30),
+    // Off unless asked for, so a real installation never gets known passwords
+    SEED_DEMO_DATA: Joi.boolean().default(false),
 
     POSTGRES_HOST: Joi.string().default("127.0.0.1"),
     POSTGRES_PORT: Joi.number().port().default(5432),
@@ -167,6 +172,7 @@ const config: Config = {
         COMPANY_TAX_NO: env.COMPANY_TAX_NO,
         RECEIPT_FOOTER: env.RECEIPT_FOOTER,
     },
+    SEED_DEMO_DATA: env.SEED_DEMO_DATA,
 };
 
 export default config;
