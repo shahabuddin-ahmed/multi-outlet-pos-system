@@ -18,6 +18,9 @@ export enum ERROR_CODES {
     E_OUTLET_INACTIVE = "E_OUTLET_INACTIVE",
     E_USER_NOT_FOUND = "E_USER_NOT_FOUND",
     E_DUPLICATE_EMAIL = "E_DUPLICATE_EMAIL",
+    E_ITEM_NOT_ASSIGNED = "E_ITEM_NOT_ASSIGNED",
+    E_INSUFFICIENT_STOCK = "E_INSUFFICIENT_STOCK",
+    E_STOCK_ABOVE_LIMIT = "E_STOCK_ABOVE_LIMIT",
 }
 
 export const errorMessages: Record<ERROR_CODES, { message: string }> = {
@@ -77,6 +80,15 @@ export const errorMessages: Record<ERROR_CODES, { message: string }> = {
     },
     E_DUPLICATE_EMAIL: {
         message: "A user with this email already exists",
+    },
+    E_ITEM_NOT_ASSIGNED: {
+        message: "This item is not assigned to this outlet",
+    },
+    E_INSUFFICIENT_STOCK: {
+        message: "Not enough stock",
+    },
+    E_STOCK_ABOVE_LIMIT: {
+        message: "Stock cannot go above 1,000,000",
     },
 };
 

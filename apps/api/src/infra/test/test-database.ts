@@ -14,7 +14,15 @@ export const assertTestDatabase = (): void => {
 };
 
 // A new table with business data goes in this list
-const BUSINESS_TABLES = ["users", "inventory", "outlet_menu_items", "outlet_receipt_counters", "menu_items", "outlets"];
+const BUSINESS_TABLES = [
+    "stock_movements",
+    "users",
+    "inventory",
+    "outlet_menu_items",
+    "outlet_receipt_counters",
+    "menu_items",
+    "outlets",
+];
 
 // Empties the business tables, so every test starts from nothing
 export const resetTestData = async (): Promise<void> => {

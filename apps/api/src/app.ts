@@ -5,18 +5,22 @@ import { API_PREFIX, JSON_BODY_LIMIT } from "./constant/api";
 import { ERROR_CODES } from "./constant/error";
 import { initializeDBConnection } from "./infra/db";
 import { newAssignmentRepo } from "./repo/assignment";
+import { newInventoryRepo } from "./repo/inventory";
 import { newMenuItemRepo } from "./repo/menu-item";
 import { newOutletRepo } from "./repo/outlet";
 import { newUserRepo } from "./repo/user";
 import { newAssignmentService } from "./service/assignment";
 import { newAuthService } from "./service/auth";
+import { newInventoryService } from "./service/inventory";
 import { newMenuItemService } from "./service/menu-item";
 import { newOutletService } from "./service/outlet";
 import { newAppConfigV1Controller } from "./web/controller/v1/app-config";
 import { newAssignmentV1Controller } from "./web/controller/v1/assignment";
 import { newAuthV1Controller } from "./web/controller/v1/auth";
+import { newInventoryV1Controller } from "./web/controller/v1/inventory";
 import { newMenuItemV1Controller } from "./web/controller/v1/menu-item";
 import { newOutletV1Controller } from "./web/controller/v1/outlet";
+import { newReportV1Controller } from "./web/controller/v1/report";
 import { NotFoundException } from "./web/exception/not-found-exception";
 import { newAuthenticate } from "./web/middleware/authenticate";
 import { globalErrorHandler } from "./web/middleware/global-error-handler";
@@ -48,12 +52,14 @@ export const appReady: Promise<void> = (async () => {
     const menuItemRepo = await newMenuItemRepo();
     const assignmentRepo = await newAssignmentRepo();
     const userRepo = await newUserRepo();
+    const inventoryRepo = await newInventoryRepo();
 
     // Initialize Service
     const authService = await newAuthService(userRepo, config.AUTH);
     const outletService = await newOutletService(outletRepo);
     const menuItemService = await newMenuItemService(menuItemRepo);
     const assignmentService = await newAssignmentService(assignmentRepo, outletService, menuItemService);
+    const inventoryService = await newInventoryService(inventoryRepo, outletService, menuItemService);
 
     // Initialize Controller
     const authV1Controller = await newAuthV1Controller(authService);
@@ -61,6 +67,8 @@ export const appReady: Promise<void> = (async () => {
     const outletV1Controller = await newOutletV1Controller(outletService);
     const menuItemV1Controller = await newMenuItemV1Controller(menuItemService);
     const assignmentV1Controller = await newAssignmentV1Controller(assignmentService);
+    const inventoryV1Controller = await newInventoryV1Controller(inventoryService);
+    const reportV1Controller = await newReportV1Controller(inventoryService);
 
     // Initialize Router
     const v1Router = await newV1Router({
@@ -72,6 +80,8 @@ export const appReady: Promise<void> = (async () => {
         outletController: outletV1Controller,
         menuItemController: menuItemV1Controller,
         assignmentController: assignmentV1Controller,
+        inventoryController: inventoryV1Controller,
+        reportController: reportV1Controller,
     });
 
     app.use(API_PREFIX, v1Router);
