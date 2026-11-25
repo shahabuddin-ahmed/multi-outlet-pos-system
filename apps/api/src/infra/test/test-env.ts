@@ -4,3 +4,6 @@ process.env.RATE_LIMIT_PER_MINUTE = "100000";
 process.env.LOGIN_RATE_LIMIT_PER_MINUTE = "100000";
 // A fixed secret, so tests do not depend on what is in .env
 process.env.JWT_SECRET = "test-only-secret-0123456789-abcdefghij";
+// Totals and report days in the tests assume these
+process.env.VAT_BPS = "500";
+process.env.BUSINESS_TIMEZONE = "Asia/Dhaka";

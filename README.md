@@ -22,4 +22,6 @@ yarn user:deactivate --email manager@example.com
 | Outlets, menu items, assignments, prices | Yes      | No             | No         |
 | See an outlet and its menu               | Any      | Own outlet     | Own outlet |
 | See and change stock, see stock history  | Any      | Own outlet     | No         |
+| Make a sale                              | No       | Own outlet     | Own outlet |
+| See sales and receipts                   | All      | Own outlet     | Own sales  |
 | Low stock list across outlets            | Yes      | No             | No         |

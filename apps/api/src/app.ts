@@ -8,12 +8,15 @@ import { newAssignmentRepo } from "./repo/assignment";
 import { newInventoryRepo } from "./repo/inventory";
 import { newMenuItemRepo } from "./repo/menu-item";
 import { newOutletRepo } from "./repo/outlet";
+import { newSaleRepo } from "./repo/sale";
+import { newSaleClaimRepo } from "./repo/sale-claim";
 import { newUserRepo } from "./repo/user";
 import { newAssignmentService } from "./service/assignment";
 import { newAuthService } from "./service/auth";
 import { newInventoryService } from "./service/inventory";
 import { newMenuItemService } from "./service/menu-item";
 import { newOutletService } from "./service/outlet";
+import { newSaleService } from "./service/sale";
 import { newAppConfigV1Controller } from "./web/controller/v1/app-config";
 import { newAssignmentV1Controller } from "./web/controller/v1/assignment";
 import { newAuthV1Controller } from "./web/controller/v1/auth";
@@ -21,6 +24,7 @@ import { newInventoryV1Controller } from "./web/controller/v1/inventory";
 import { newMenuItemV1Controller } from "./web/controller/v1/menu-item";
 import { newOutletV1Controller } from "./web/controller/v1/outlet";
 import { newReportV1Controller } from "./web/controller/v1/report";
+import { newSaleV1Controller } from "./web/controller/v1/sale";
 import { NotFoundException } from "./web/exception/not-found-exception";
 import { newAuthenticate } from "./web/middleware/authenticate";
 import { globalErrorHandler } from "./web/middleware/global-error-handler";
@@ -53,6 +57,8 @@ export const appReady: Promise<void> = (async () => {
     const assignmentRepo = await newAssignmentRepo();
     const userRepo = await newUserRepo();
     const inventoryRepo = await newInventoryRepo();
+    const saleRepo = await newSaleRepo();
+    const saleClaimRepo = await newSaleClaimRepo();
 
     // Initialize Service
     const authService = await newAuthService(userRepo, config.AUTH);
@@ -60,6 +66,14 @@ export const appReady: Promise<void> = (async () => {
     const menuItemService = await newMenuItemService(menuItemRepo);
     const assignmentService = await newAssignmentService(assignmentRepo, outletService, menuItemService);
     const inventoryService = await newInventoryService(inventoryRepo, outletService, menuItemService);
+    const saleService = await newSaleService(
+        saleRepo,
+        saleClaimRepo,
+        assignmentRepo,
+        inventoryRepo,
+        outletService,
+        config.BUSINESS
+    );
 
     // Initialize Controller
     const authV1Controller = await newAuthV1Controller(authService);
@@ -69,6 +83,7 @@ export const appReady: Promise<void> = (async () => {
     const assignmentV1Controller = await newAssignmentV1Controller(assignmentService);
     const inventoryV1Controller = await newInventoryV1Controller(inventoryService);
     const reportV1Controller = await newReportV1Controller(inventoryService);
+    const saleV1Controller = await newSaleV1Controller(saleService);
 
     // Initialize Router
     const v1Router = await newV1Router({
@@ -82,6 +97,7 @@ export const appReady: Promise<void> = (async () => {
         assignmentController: assignmentV1Controller,
         inventoryController: inventoryV1Controller,
         reportController: reportV1Controller,
+        saleController: saleV1Controller,
     });
 
     app.use(API_PREFIX, v1Router);

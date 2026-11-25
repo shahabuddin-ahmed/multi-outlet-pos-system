@@ -13,9 +13,10 @@ export const staffService = new UserService(new UserRepo(), new OutletRepo());
 export const logIn = (app: Express, email: string, password: string = TEST_PASSWORD) =>
     request(app).post(`${API_PREFIX}/auth/login`).send({ email, password });
 
-// Creates a user the way the staff command does, then signs in
-export const signInAs = async (app: Express, role: UserRole, outletCode?: string) => {
-    const email = `${role}.${outletCode ?? "hq"}@pos.test`.toLowerCase();
+// Creates a user the way the staff command does, then signs in.
+// "tag" tells two users with the same role and outlet apart.
+export const signInAs = async (app: Express, role: UserRole, outletCode?: string, tag = "") => {
+    const email = `${role}.${outletCode ?? "hq"}${tag}@pos.test`.toLowerCase();
     await staffService.create({ email, fullName: "Test User", role, outletCode, password: TEST_PASSWORD });
     const res = await logIn(app, email);
     expect(res.status).toBe(200);

@@ -21,6 +21,11 @@ export enum ERROR_CODES {
     E_ITEM_NOT_ASSIGNED = "E_ITEM_NOT_ASSIGNED",
     E_INSUFFICIENT_STOCK = "E_INSUFFICIENT_STOCK",
     E_STOCK_ABOVE_LIMIT = "E_STOCK_ABOVE_LIMIT",
+    E_SALE_NOT_FOUND = "E_SALE_NOT_FOUND",
+    E_ITEM_NOT_SELLABLE = "E_ITEM_NOT_SELLABLE",
+    E_PRICE_CHANGED = "E_PRICE_CHANGED",
+    E_TENDER_TOO_LOW = "E_TENDER_TOO_LOW",
+    E_IDEMPOTENCY_KEY_REUSED = "E_IDEMPOTENCY_KEY_REUSED",
 }
 
 export const errorMessages: Record<ERROR_CODES, { message: string }> = {
@@ -89,6 +94,21 @@ export const errorMessages: Record<ERROR_CODES, { message: string }> = {
     },
     E_STOCK_ABOVE_LIMIT: {
         message: "Stock cannot go above 1,000,000",
+    },
+    E_SALE_NOT_FOUND: {
+        message: "Sale not found",
+    },
+    E_ITEM_NOT_SELLABLE: {
+        message: "Some items cannot be sold at this outlet",
+    },
+    E_PRICE_CHANGED: {
+        message: "Prices have changed. Check the new total.",
+    },
+    E_TENDER_TOO_LOW: {
+        message: "The cash received is less than the total",
+    },
+    E_IDEMPOTENCY_KEY_REUSED: {
+        message: "This retry key was already used for a different sale",
     },
 };
 

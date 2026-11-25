@@ -8,6 +8,7 @@ import newSequelize from "../../../../infra/sequelize";
 import { resetTestData } from "../../../../infra/test/test-database";
 import { startTestApp } from "./test-app";
 import { signInAs } from "./test-auth";
+import { expectNoInternalIds } from "./test-guards";
 
 let app: Express;
 // Everything here is head office work; who may do what is tested in auth.integ.test.ts
@@ -66,24 +67,6 @@ const countRows = async (table: string): Promise<number> => {
 // The tills sell stock in a later phase; here the quantity is set straight in the database
 const setStock = async (quantity: number): Promise<void> => {
     await newSequelize().query("UPDATE inventory SET quantity = :quantity", { replacements: { quantity } });
-};
-
-// Every "id" in an answer must be a public UUID: database ids never leave the server
-const expectNoInternalIds = (value: unknown): void => {
-    if (Array.isArray(value)) {
-        value.forEach(expectNoInternalIds);
-        return;
-    }
-    if (value === null || typeof value !== "object") {
-        return;
-    }
-    for (const [key, child] of Object.entries(value)) {
-        expect(key).not.toMatch(/^public_?id$/i);
-        if (key === "id" || /(Id|_id)$/.test(key)) {
-            expect(child).toEqual(expect.stringMatching(UUID_PATTERN));
-        }
-        expectNoInternalIds(child);
-    }
 };
 
 describe("outlets", () => {

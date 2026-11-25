@@ -27,7 +27,20 @@ export interface AssignmentInput {
     isAvailable: boolean;
 }
 
+// What a sale needs to know about an item at the outlet, including its internal id
+export interface SaleItemSource {
+    id: number;
+    publicId: string;
+    sku: string;
+    name: string;
+    basePriceCents: number;
+    priceOverrideCents: number | null;
+    isAvailable: boolean;
+    itemIsActive: boolean;
+}
+
 export interface AssignmentRepoInterface {
+    findForSale(outletId: number, itemPublicIds: string[], transaction: Transaction): Promise<SaleItemSource[]>;
     insertIfMissing(key: AssignmentKey, input: AssignmentInput, transaction: Transaction): Promise<boolean>;
     update(key: AssignmentKey, input: AssignmentInput, transaction: Transaction): Promise<void>;
     ensureStockRow(key: AssignmentKey, transaction: Transaction): Promise<void>;
@@ -57,6 +70,28 @@ const SELLABLE = ["a.is_available", "m.is_active"];
 const MATCHES_SEARCH = "(m.name ILIKE :pattern OR m.sku ILIKE :pattern)";
 
 export class AssignmentRepo implements AssignmentRepoInterface {
+    // Only the items assigned to this outlet come back; the caller decides which of them can be sold
+    public async findForSale(
+        outletId: number,
+        itemPublicIds: string[],
+        transaction: Transaction
+    ): Promise<SaleItemSource[]> {
+        return newSequelize().query<SaleItemSource>(
+            `SELECT m.id AS "id",
+                    m.public_id AS "publicId",
+                    m.sku AS "sku",
+                    m.name AS "name",
+                    m.base_price_cents AS "basePriceCents",
+                    a.price_override_cents AS "priceOverrideCents",
+                    a.is_available AS "isAvailable",
+                    m.is_active AS "itemIsActive"
+             FROM outlet_menu_items a
+             JOIN menu_items m ON m.id = a.menu_item_id
+             WHERE a.outlet_id = :outletId AND m.public_id IN (:itemPublicIds)`,
+            { replacements: { outletId, itemPublicIds }, type: QueryTypes.SELECT, transaction }
+        );
+    }
+
     // True when this call created the row. A second request for the same pair waits here until the first
     // one commits, then inserts nothing.
     public async insertIfMissing(

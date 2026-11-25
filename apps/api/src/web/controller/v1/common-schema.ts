@@ -1,5 +1,6 @@
 import Joi from "joi";
 import { PAGINATION, SEARCH_MAX_LENGTH, UUID_PATTERN } from "../../../constant/api";
+import { CALENDAR_DATE_PATTERN } from "../../../constant/sale";
 
 // Records are addressed by their public UUID only
 export const publicIdSchema = Joi.string()
@@ -20,7 +21,7 @@ export const outletItemParamsSchema = Joi.object({
     menuItemId: publicIdSchema.required(),
 });
 
-const pageFields = (defaultLimit: number) => ({
+export const pageFields = (defaultLimit: number) => ({
     offset: Joi.number().integer().min(0).default(0),
     limit: Joi.number().integer().min(1).max(PAGINATION.MAX_LIST_LIMIT).default(defaultLimit),
 });
@@ -36,6 +37,17 @@ const newListQuerySchema = (defaultLimit: number) =>
 export const pageQuerySchema = Joi.object(pageFields(PAGINATION.DEFAULT_LIST_LIMIT));
 export const listQuerySchema = newListQuerySchema(PAGINATION.DEFAULT_LIST_LIMIT);
 export const menuQuerySchema = newListQuerySchema(PAGINATION.DEFAULT_MENU_LIMIT);
+
+// A day as YYYY-MM-DD that really exists (30 February does not)
+export const calendarDateSchema = Joi.string()
+    .pattern(CALENDAR_DATE_PATTERN)
+    .custom((value: string, helpers) => {
+        const day = new Date(`${value}T00:00:00Z`);
+        const exists = !Number.isNaN(day.getTime()) && day.toISOString().startsWith(value);
+        return exists ? value : helpers.error("string.pattern.base");
+    })
+    .messages({ "string.pattern.base": "{{#label}} must be a date as YYYY-MM-DD" })
+    .empty("");
 
 // A text field the user may clear: "" and null both mean "nothing"
 export const optionalText = (maxLength: number) => Joi.string().trim().max(maxLength).allow("", null);
