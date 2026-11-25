@@ -2,6 +2,7 @@ import { QueryTypes, Transaction } from "sequelize";
 import { OrderType, PaymentMethod } from "../constant/sale";
 import newSequelize from "../infra/sequelize";
 import { ListQuery, Rows } from "../service/page";
+import { onOrAfterDay, onOrBeforeDay } from "./day-range";
 
 // What a receipt prints besides the sale itself, saved with the sale
 export interface ReceiptSnapshot {
@@ -105,8 +106,8 @@ const FILTER_SQL: Record<Exclude<keyof SaleFilter, "timezone">, string> = {
     visibleUserId: "s.user_id = :visibleUserId",
     receiptNo: "s.receipt_no = :receiptNo",
     outletCode: "o.code = :outletCode",
-    from: "s.created_at >= (CAST(:from AS timestamp) AT TIME ZONE :timezone)",
-    to: "s.created_at < (CAST(CAST(:to AS date) + 1 AS timestamp) AT TIME ZONE :timezone)",
+    from: onOrAfterDay("s.created_at"),
+    to: onOrBeforeDay("s.created_at"),
 };
 
 export class SaleRepo implements SaleRepoInterface {

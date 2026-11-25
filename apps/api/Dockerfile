@@ -27,5 +27,5 @@ USER node
 EXPOSE ${PORT}
 
 # Settings and secrets (POSTGRES_*, ...) are passed in at runtime, never built into the image.
-# Update the tables and default data, then start the API
-CMD ["sh", "-c", "yarn db:migrate:prod && yarn db:seed:prod && yarn start"]
+# Update the tables and default data (and demo data when SEED_DEMO_DATA is true), then start the API
+CMD ["sh", "-c", "yarn db:migrate:prod && yarn db:seed:prod && yarn demo:seed:prod && yarn start"]

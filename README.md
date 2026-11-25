@@ -24,4 +24,24 @@ yarn user:deactivate --email manager@example.com
 | See and change stock, see stock history  | Any      | Own outlet     | No         |
 | Make a sale                              | No       | Own outlet     | Own outlet |
 | See sales and receipts                   | All      | Own outlet     | Own sales  |
-| Low stock list across outlets            | Yes      | No             | No         |
+| Reports and low stock list               | Yes      | No             | No         |
+
+## Demo data
+
+For trying the system out: 3 outlets in Dhaka, 10 menu items, outlet prices, 14 days of sales, one item running low
+and one sold out. In `apps/api`, on a migrated and empty database:
+
+```bash
+SEED_DEMO_DATA=true yarn demo:seed
+```
+
+The containers run this on start when `SEED_DEMO_DATA=true`. It adds nothing if the database already has outlets.
+**These accounts have a public password: never switch this on for a real installation.**
+
+| Account                                                                   | Role           |
+| ------------------------------------------------------------------------- | -------------- |
+| `hq@demo.test`                                                            | HQ admin       |
+| `manager.dhk@demo.test`, `manager.gul@demo.test`, `manager.utt@demo.test` | Outlet manager |
+| `cashier.dhk@demo.test`, `cashier.gul@demo.test`, `cashier.utt@demo.test` | Cashier        |
+
+Password for all of them: `demo-pos-2026`

@@ -17,6 +17,7 @@ import { AuthUser } from "./auth";
 import { OutletServiceInterface } from "./outlet";
 import { ListQuery, Page, toPage } from "./page";
 import { priceOf } from "./pricing";
+import { assertDateOrder } from "./report-period";
 import {
     canViewSale,
     mergeLines,
@@ -66,7 +67,6 @@ const MESSAGES = {
     CASH_ONLY: "Cash received is only for cash payments",
     NO_CASH_REFERENCE: "A payment reference is not used for cash",
     TOO_MANY_OF_ONE: `At most ${SALE_LIMITS.QUANTITY_MAX} of one item in a sale`,
-    DATES_REVERSED: "The start date is after the end date",
 };
 
 const invalid = (message: string) => new BadRequestException(ERROR_CODES.E_INVALID_DATA, message);
@@ -140,9 +140,7 @@ export class SaleService implements SaleServiceInterface {
 
     async list(viewer: AuthUser, search: SaleSearch, query: ListQuery): Promise<Page<SaleSummaryRecord>> {
         const { outletId, receipt, from, to } = search;
-        if (from && to && from > to) {
-            throw invalid(MESSAGES.DATES_REVERSED);
-        }
+        assertDateOrder(from, to);
         const outlet = outletId ? await this.outletService.getByPublicId(outletId) : null;
         const rows = await this.repo.list(
             {
