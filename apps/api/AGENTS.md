@@ -10,6 +10,7 @@ Requests go **router → controller → service → repo → model**. Keep each 
 | -------------------- | ------------------------------------------------------------------------ | -------------------------------------- |
 | `src/web/router`     | Routes and middleware                                                    | Logic                                  |
 | `src/web/controller` | Joi checks with `validateRequest`, then one service call, `sendResponse` | Database calls                         |
+| `src/web/dto`        | Build the answer: one mapper per record, fields listed one by one        | Database calls                         |
 | `src/service`        | Business logic, transactions                                             | Express objects (`req`, `res`)         |
 | `src/repo`           | Run queries and return the result                                        | Business rules, try/catch              |
 | `src/model`          | Sequelize table definitions                                              | Logic                                  |
@@ -20,7 +21,13 @@ Requests go **router → controller → service → repo → model**. Keep each 
     error leads to another action (a fallback, a retry), never just to log it.
 -   Validation is strict: a field the Joi schema does not list is rejected.
 -   A new setting goes in `src/config/config.ts` (checked with Joi at start-up), `.env.example` and the README.
--   Money is stored as integer cents, never as a float.
+-   Money is stored as integer minor units (paisa), never as a float.
+
+## Ids
+
+-   The integer `id` is internal. It is never sent to a client and never accepted from one.
+-   A record the API shows has `public_id` (UUID). In JSON it is `id`; routes and bodies use it.
+-   Controllers never send a model or repository record as it is: it goes through a mapper in `src/web/dto`.
 
 ## Database
 
@@ -28,6 +35,9 @@ Requests go **router → controller → service → repo → model**. Keep each 
 -   **Never edit a migration that has already run.** Add a new file named `YYYYMMDDHHMMSS-what-it-does.ts` with both
     `up` and `down`.
 -   Columns are `snake_case` in the database; models use `underscored: true`, so code uses camelCase.
+-   Simple one-table records use a model. Joins and writes that must be safe under concurrency use SQL in the
+    repository, with every value passed through `replacements`.
+-   Records are switched off (`is_active`), never deleted; foreign keys are `ON DELETE RESTRICT`.
 -   Rules that must always hold (no negative stock, one receipt number per outlet) belong in the database as
     `CHECK` and `UNIQUE` constraints, as well as in the service.
 -   Do not run migrations on the dev database without approval. Tests use a database whose name ends with `_test`.
@@ -47,8 +57,3 @@ Requests go **router → controller → service → repo → model**. Keep each 
 
 Prettier: 4 spaces, double quotes, 120 columns. Format only the files you change (`npx prettier --write <file>`),
 never the whole repository.
-
-## Sample code
-
-`posts` (model, repo, service, controller, router, migration, `constant/post.ts`) is a sample CRUD that proves the
-stack. Copy its pattern for a real feature, then delete it.
