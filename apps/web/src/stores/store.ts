@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
-import outletReducer from '@/stores/slices/outlet-slice';
+import sessionReducer from '@/stores/slices/session-slice';
 
 export const store = configureStore({
   reducer: {
-    outlet: outletReducer
+    session: sessionReducer
   }
 });
 

@@ -11,6 +11,8 @@ COPY . .
 # Next.js puts NEXT_PUBLIC_* into the browser code at build time.
 # The API address comes from this build argument when it is given, otherwise from .env.production.
 ARG NEXT_PUBLIC_API_URL
+# Only for a demo installation: shows the demo accounts on the login page
+ARG NEXT_PUBLIC_DEMO_PASSWORD
 ENV NEXT_OUTPUT=standalone
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN yarn build

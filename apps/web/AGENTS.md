@@ -9,22 +9,25 @@ Never recompute a rule in the browser. Money travels as integer cents; `formatMo
 
 ## Structure (Next.js App Router)
 
-| Folder                  | Put here                                                              |
-| ----------------------- | --------------------------------------------------------------------- |
-| `src/app/<route>`       | A thin `page.tsx` that renders its feature view                       |
-| `src/features/<page>`   | The UI of one page, split into small components                       |
-| `src/components/ui`     | Base parts in shadcn style: button, card, input, badge…               |
-| `src/components/shared` | Parts used by several pages: pager, empty and loading states          |
-| `src/components/layout` | The app shell: sidebar, top bar, footer                               |
-| `src/lib`               | `api.ts` (every API call), formatting, `cn`                           |
-| `src/hooks`             | `useApiData` (loading and error state) and typed Redux hooks          |
-| `src/stores`            | Redux: only state shared by several pages (the open outlet, the cart) |
-| `src/types`             | Types that match the API answers                                      |
+| Folder                  | Put here                                                          |
+| ----------------------- | ----------------------------------------------------------------- |
+| `src/app/(app)/<route>` | Signed-in pages: a thin `page.tsx` that renders its feature view  |
+| `src/features/<page>`   | The UI of one page, split into small components                   |
+| `src/components/ui`     | Base parts in shadcn style: button, card, input, badge…           |
+| `src/components/shared` | Parts used by several pages: pager, empty and loading states      |
+| `src/components/layout` | The app shell: sidebar, top bar, footer                           |
+| `src/lib`               | `api.ts` (every API call), formatting, `cn`                       |
+| `src/hooks`             | `useApiData` (loading and error state) and typed Redux hooks      |
+| `src/stores`            | Redux: only state shared by several pages (the session, the cart) |
+| `src/types`             | Types that match the API answers                                  |
 
 ## Rules
 
-- **All API calls go through `src/lib/api.ts`.** Show the API's own error message; on `E_NOT_FOUND` show a "not
-  found" state.
+- **All API calls go through `src/lib/api.ts`.** Show the API's own error message; on a 404 show a "not found" state.
+- **Pages and roles** are listed once, in `src/lib/access.ts`; the menu and the page guard both read it. A page that is
+  not listed is closed. This only hides things: the API is what refuses.
+- **Session:** the token is kept by `src/lib/token.ts`; sign in and out through `session-slice`. A 401 signs out.
+- **Money and dates** are shown with `useSettings()` (the API's currency and business time zone).
 - **Styling:** Tailwind classes with `cn`; reuse `components/ui` before adding a new part; icons from `lucide-react`;
   toasts with `sonner`.
 - **Accessibility:** every control has a label and works with the keyboard.

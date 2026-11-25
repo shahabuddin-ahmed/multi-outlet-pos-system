@@ -8,10 +8,12 @@ Needs Docker with Compose 2.24 or newer. On a fresh clone:
 docker compose up --build
 ```
 
-The API runs on `http://localhost:4000/api/v1` and the web app on `http://localhost:3000`. Demo data and the
-[demo logins](#demo-data) are added to the empty database. To change a setting, copy `.env.example` to `.env` in
-`apps/api` or `apps/web` (the example file has `SEED_DEMO_DATA=false`, so set `true` there to keep demo data). After
-packages change, add `-V` to the command so the containers get the new ones.
+Open the web app on `http://localhost:3000` and pick a demo account on the login page. The API runs on
+`http://localhost:4000/api/v1`. Demo data and the [demo logins](#demo-data) are added to the empty database.
+
+To change a setting, copy `.env.example` to `.env` in `apps/api` or `apps/web`. The example files switch the demo off:
+set `SEED_DEMO_DATA=true` for the API and `NEXT_PUBLIC_DEMO_PASSWORD` for the web app to keep it. After packages
+change, add `-V` to the command so the containers get the new ones.
 
 ## Retry safety
 

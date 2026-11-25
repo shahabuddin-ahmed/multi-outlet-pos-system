@@ -1,8 +1,16 @@
 import { CircleAlert } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export function PageState({ message, error = false }: { message: string; error?: boolean }) {
+interface PageStateProps {
+  message: string;
+  error?: boolean;
+  // Shown with an error, when trying again can help
+  onRetry?: () => void;
+}
+
+export function PageState({ message, error = false, onRetry }: PageStateProps) {
   if (error) {
     return (
       <Card role="alert" className="border-red-200">
@@ -12,6 +20,11 @@ export function PageState({ message, error = false }: { message: string; error?:
           </span>
           <span className="text-sm font-semibold">Something went wrong</span>
           <span className="max-w-md text-sm text-muted-foreground">{message}</span>
+          {onRetry && (
+            <Button variant="outline" size="sm" className="mt-2" onClick={onRetry}>
+              Try again
+            </Button>
+          )}
         </CardContent>
       </Card>
     );

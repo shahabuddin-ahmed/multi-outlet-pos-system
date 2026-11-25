@@ -12,6 +12,31 @@ export interface HealthReport {
   database: string;
 }
 
+export type UserRole = 'HQ_ADMIN' | 'OUTLET_MANAGER' | 'CASHIER';
+
+export interface User {
+  id: string;
+  email: string;
+  fullName: string;
+  role: UserRole;
+  // null for head office
+  outlet: { id: string; code: string; name: string } | null;
+}
+
+export interface LoginResult {
+  token: string;
+  user: User;
+}
+
+// Business settings, for display only: the server uses its own when it prices a sale
+export interface AppConfig {
+  companyName: string;
+  companyTaxNo: string;
+  currency: string;
+  vatBps: number;
+  timezone: string;
+}
+
 export interface Paged<T> {
   data: T[];
   offset: number;

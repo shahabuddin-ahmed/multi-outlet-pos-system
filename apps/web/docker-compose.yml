@@ -13,6 +13,8 @@ services:
       - path: .env
         required: false
     environment:
+      # Demo accounts on the login page in development, unless .env or the shell says otherwise (empty: off)
+      NEXT_PUBLIC_DEMO_PASSWORD: ${NEXT_PUBLIC_DEMO_PASSWORD-demo-pos-2026}
       # File events from macOS do not always reach Docker, so Next.js also checks for changes itself
       WATCHPACK_POLLING: 'true'
     ports:
