@@ -1,9 +1,8 @@
 import { randomUUID } from "crypto";
 import { Express } from "express";
 import request from "supertest";
-import { API_PREFIX } from "../../../../constant/api";
+import { API_PREFIX, IDEMPOTENCY_HEADER } from "../../../../constant/api";
 import { UserRole } from "../../../../constant/auth";
-import { IDEMPOTENCY_HEADER } from "../../../../constant/sale";
 import newSequelize from "../../../../infra/sequelize";
 import { resetTestData } from "../../../../infra/test/test-database";
 import { vatOf } from "../../../../service/sale-rules";
@@ -129,8 +128,20 @@ describe("revenue by outlet", () => {
             `range=today&from=${dhakaDay(0)}`,
             `from=${dhakaDay(0)}&to=${dhakaDay(1)}`,
             "from=yesterday",
+            "from=2026-02-30",
         ]) {
             expect([query, (await get(`/reports/revenue-by-outlet?${query}`)).status]).toEqual([query, 400]);
+        }
+    });
+
+    // PostgreSQL has no year 0000; such a date must be refused before it reaches the database
+    it("refuses a year no sale can have, in reports and in sales history", async () => {
+        for (const path of ["/reports/revenue-by-outlet", "/reports/top-items", "/sales"]) {
+            for (const query of ["from=0000-01-01", "to=0000-12-31", "from=1899-12-31", "to=3000-01-01"]) {
+                const status = (await get(`${path}?${query}`)).status;
+                expect([path, query, status]).toEqual([path, query, 400]);
+            }
+            expect((await get(`${path}?from=1900-01-01&to=2999-12-31`)).status).toBe(200);
         }
     });
 });

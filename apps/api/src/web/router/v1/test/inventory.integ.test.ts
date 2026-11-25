@@ -1,6 +1,7 @@
+import { randomUUID } from "crypto";
 import { Express } from "express";
 import request from "supertest";
-import { API_PREFIX, UUID_PATTERN } from "../../../../constant/api";
+import { API_PREFIX, IDEMPOTENCY_HEADER, UUID_PATTERN } from "../../../../constant/api";
 import { UserRole } from "../../../../constant/auth";
 import newSequelize from "../../../../infra/sequelize";
 import { resetTestData } from "../../../../infra/test/test-database";
@@ -32,11 +33,22 @@ afterAll(async () => {
 const get = (path: string, token: string = manager) =>
     request(app).get(`${API_PREFIX}${path}`).set("Authorization", `Bearer ${token}`);
 
-const adjust = (body: object, token: string = manager, outletId: string = outlet, itemId: string = item) =>
+// Each call is a new change unless a retry key is given
+const adjust = (
+    body: object,
+    token: string = manager,
+    outletId: string = outlet,
+    itemId: string = item,
+    key: string = randomUUID()
+) =>
     request(app)
         .post(`${API_PREFIX}/outlets/${outletId}/inventory/${itemId}/adjustments`)
         .set("Authorization", `Bearer ${token}`)
+        .set(IDEMPOTENCY_HEADER, key)
         .send(body);
+
+const retry = (body: object, key: string, token: string = manager, itemId: string = item) =>
+    adjust(body, token, outlet, itemId, key);
 
 const stockNow = async (): Promise<number> => (await get(`/outlets/${outlet}/inventory`)).body.response.data[0].stock;
 
@@ -126,6 +138,88 @@ describe("stock changes", () => {
                  SELECT outlet_id, menu_item_id, -1, 0, 'RESTOCK' FROM inventory`
             )
         ).rejects.toMatchObject({ name: "SequelizeDatabaseError" });
+    });
+});
+
+describe("a stock change sent again", () => {
+    it("is applied once, and the retry gets the same answer", async () => {
+        const key = randomUUID();
+        const body = { delta: 10, reason: "RESTOCK", note: "Delivery" };
+
+        const first = await retry(body, key);
+        const again = await retry(body, key);
+
+        expect([first.status, again.status]).toEqual([201, 200]);
+        expect(again.body.response).toEqual(first.body.response);
+        expect(await stockNow()).toBe(10);
+        expect((await history()).total).toBe(1);
+    });
+
+    it("is applied once when both copies arrive at the same moment", async () => {
+        const key = randomUUID();
+
+        const answers = await Promise.all(
+            Array.from({ length: 10 }, () => retry({ delta: 4, reason: "RESTOCK" }, key))
+        );
+
+        expect(answers.map((res) => res.status).sort()).toEqual([...Array(9).fill(200), 201]);
+        expect(await stockNow()).toBe(4);
+        expect((await history()).total).toBe(1);
+    });
+
+    it("is answered even when the stock is used up by then", async () => {
+        await adjust({ delta: 5, reason: "RESTOCK" });
+        const key = randomUUID();
+        await retry({ delta: -5, reason: "WASTE" }, key);
+
+        const again = await retry({ delta: -5, reason: "WASTE" }, key);
+
+        expect(again.status).toBe(200);
+        expect(again.body.response.quantityAfter).toBe(0);
+    });
+
+    it("refuses the same key for a different change, item or person", async () => {
+        const other = (await newItem("DR-001")).publicId;
+        await assignItem(outlet, other);
+        const headOffice = (await signInAs(app, UserRole.HQ_ADMIN)).token;
+        const key = randomUUID();
+        const body = { delta: 5, reason: "RESTOCK" };
+        await retry(body, key);
+
+        const otherAmount = await retry({ ...body, delta: 6 }, key);
+        const otherNote = await retry({ ...body, note: "Evening" }, key);
+        const otherItem = await retry(body, key, manager, other);
+        const otherPerson = await retry(body, key, headOffice);
+
+        for (const res of [otherAmount, otherNote, otherItem]) {
+            expect([res.status, res.body.code]).toEqual([409, "E_IDEMPOTENCY_KEY_REUSED"]);
+        }
+        expect(otherPerson.status).toBe(403);
+        expect(await stockNow()).toBe(5);
+    });
+
+    it("can try the same key again after a refusal", async () => {
+        const key = randomUUID();
+        const refused = await retry({ delta: -1, reason: "WASTE" }, key);
+        await adjust({ delta: 3, reason: "RESTOCK" });
+
+        const accepted = await retry({ delta: -1, reason: "WASTE" }, key);
+
+        expect([refused.status, accepted.status]).toEqual([409, 201]);
+    });
+
+    it("needs a valid key", async () => {
+        const send = () =>
+            request(app)
+                .post(`${API_PREFIX}/outlets/${outlet}/inventory/${item}/adjustments`)
+                .set("Authorization", `Bearer ${manager}`);
+        const body = { delta: 1, reason: "RESTOCK" };
+
+        const missing = await send().send(body);
+        const notAnId = await send().set(IDEMPOTENCY_HEADER, "1").send(body);
+
+        expect([missing.status, notAnId.status]).toEqual([400, 400]);
+        expect((await history()).total).toBe(0);
     });
 });
 

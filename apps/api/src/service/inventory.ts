@@ -1,10 +1,17 @@
 import { ERROR_CODES } from "../constant/error";
 import { LOW_STOCK_THRESHOLD, StockReason } from "../constant/stock";
 import { AssignmentKey } from "../repo/assignment";
-import { InventoryRepoInterface, LowStockRecord, MovementRecord, StockRecord } from "../repo/inventory";
+import {
+    InventoryRepoInterface,
+    KeyedMovementRecord,
+    LowStockRecord,
+    MovementRecord,
+    StockRecord,
+} from "../repo/inventory";
 import { withTransaction } from "../repo/transaction";
 import { BadRequestException } from "../web/exception/bad-request-exception";
 import { ConflictException } from "../web/exception/conflict-exception";
+import { ForbiddenException } from "../web/exception/forbidden-exception";
 import { NotFoundException } from "../web/exception/not-found-exception";
 import { UnprocessableEntityException } from "../web/exception/unprocessable-entity-exception";
 import { MenuItemServiceInterface } from "./menu-item";
@@ -18,6 +25,12 @@ export interface StockAdjustment {
     note: string | null;
 }
 
+export interface AdjustmentResult {
+    movement: MovementRecord;
+    // True when this request had already been completed and the stored change is returned
+    replayed: boolean;
+}
+
 export interface InventoryServiceInterface {
     list(outletPublicId: string, query: ListQuery): Promise<Page<StockRecord>>;
     history(outletPublicId: string, itemPublicId: string, query: ListQuery): Promise<Page<MovementRecord>>;
@@ -25,8 +38,9 @@ export interface InventoryServiceInterface {
         outletPublicId: string,
         itemPublicId: string,
         adjustment: StockAdjustment,
+        idempotencyKey: string,
         userId: number
-    ): Promise<MovementRecord>;
+    ): Promise<AdjustmentResult>;
     lowStock(query: ListQuery): Promise<Page<LowStockRecord>>;
 }
 
@@ -39,6 +53,24 @@ const assertDirection = ({ reason, delta }: StockAdjustment): void => {
     }
     if (reason === StockReason.WASTE && delta > 0) {
         throw new BadRequestException(ERROR_CODES.E_INVALID_DATA, WASTE_MUST_REMOVE);
+    }
+};
+
+// A retry must be the same person asking for the same change
+const assertSameChange = (
+    earlier: KeyedMovementRecord,
+    { menuItemId, delta, reason, note, userId }: StockAdjustment & { menuItemId: number; userId: number }
+): void => {
+    if (earlier.userId !== userId) {
+        throw new ForbiddenException(ERROR_CODES.E_FORBIDDEN);
+    }
+    const same =
+        earlier.menuItemId === menuItemId &&
+        earlier.delta === delta &&
+        earlier.reason === reason &&
+        earlier.note === note;
+    if (!same) {
+        throw new ConflictException(ERROR_CODES.E_IDEMPOTENCY_KEY_REUSED);
     }
 };
 
@@ -64,12 +96,21 @@ export class InventoryService implements InventoryServiceInterface {
         outletPublicId: string,
         itemPublicId: string,
         adjustment: StockAdjustment,
+        idempotencyKey: string,
         userId: number
-    ): Promise<MovementRecord> {
+    ): Promise<AdjustmentResult> {
         assertDirection(adjustment);
         const key = await this.stockKeyOf(outletPublicId, itemPublicId);
 
         return withTransaction(async (transaction) => {
+            // A retry sent at the same moment waits here, then finds the first change
+            await this.repo.lock(key, transaction);
+            const earlier = await this.repo.findByRetryKey(key.outletId, idempotencyKey, transaction);
+            if (earlier) {
+                assertSameChange(earlier, { ...adjustment, menuItemId: key.menuItemId, userId });
+                return { movement: earlier, replayed: true };
+            }
+
             const quantityAfter = await this.repo.changeQuantity(key, adjustment.delta, transaction);
             if (quantityAfter === null) {
                 if (adjustment.delta > 0) {
@@ -79,7 +120,15 @@ export class InventoryService implements InventoryServiceInterface {
                 const stock = await this.repo.findOne(key, transaction);
                 throw new ConflictException(ERROR_CODES.E_INSUFFICIENT_STOCK, `Only ${stock?.quantity} in stock`);
             }
-            return this.repo.addMovement({ ...key, ...adjustment, quantityAfter, userId }, transaction);
+            const movement = await this.repo.addMovement(
+                { ...key, ...adjustment, quantityAfter, userId, idempotencyKey },
+                transaction
+            );
+            if (!movement) {
+                // Another item took this key at the same moment; throwing undoes the quantity change
+                throw new ConflictException(ERROR_CODES.E_IDEMPOTENCY_KEY_REUSED);
+            }
+            return { movement, replayed: false };
         });
     }
 

@@ -35,6 +35,8 @@ Requests go **router → controller → service → repo → model**. Keep each 
 -   Every one of those routes also names who may use it (`headOfficeOnly`, `allowRoles`, `allowAtOutlet`). A route
     under `/outlets/:outletId` must stop staff of another outlet.
 -   Never log or return a password, a password hash or a token (the login answer is the one place a token is sent).
+-   A password change goes through `UserRepo.changePassword`, which also ends every earlier login.
+-   A write a client may send twice (a sale, a stock change) takes an `Idempotency-Key` and happens once.
 -   `src/cli` holds commands such as the staff accounts: like a controller, they check input and call one service.
 
 ## Database

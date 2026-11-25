@@ -133,6 +133,7 @@ const addOpeningStock = async (services: Services, outlets: DemoOutlet[], at: Da
                 outlet.publicId,
                 item.publicId,
                 { delta: DEMO_HISTORY.OPENING_STOCK, reason: StockReason.RESTOCK, note: "Opening stock" },
+                randomUUID(),
                 outlet.manager.id
             );
         }
@@ -229,6 +230,7 @@ const setFinalStock = async (services: Services, outlets: DemoOutlet[]): Promise
             outlet.publicId,
             item.publicId,
             { delta: quantity - stock.data[0].quantity, reason: StockReason.WASTE, note: "Demo: spoiled stock" },
+            randomUUID(),
             outlet.manager.id
         );
     }

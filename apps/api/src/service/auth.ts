@@ -57,14 +57,15 @@ export class AuthService implements AuthServiceInterface {
         if (user.outlet && !user.outlet.isActive) {
             throw new ForbiddenException(ERROR_CODES.E_OUTLET_INACTIVE);
         }
-        return { token: this.sign(account.publicId), user };
+        return { token: this.sign(account), user };
     }
 
-    // The token only says who the user is. Role and active state are read again on every request,
-    // so switching someone off works at once.
+    // The token only says who the user is and which password it was made after. Role and active state are
+    // read again on every request, so switching someone off or changing a password works at once.
     async authenticate(token: string): Promise<AuthUser> {
-        const account = await this.repo.findByPublicId(this.subjectOf(token));
-        if (!account || !account.isActive) {
+        const { subject, version } = this.claimsOf(token);
+        const account = await this.repo.findByPublicId(subject);
+        if (!account || !account.isActive || account.tokenVersion !== version) {
             throw new UnauthorizedException(ERROR_CODES.E_UNAUTHENTICATED);
         }
         return this.toAuthUser(account);
@@ -75,19 +76,19 @@ export class AuthService implements AuthServiceInterface {
         return this.decoyHash;
     }
 
-    private sign(publicId: string): string {
-        return jwt.sign({}, this.settings.JWT_SECRET, {
+    private sign({ publicId, tokenVersion }: AccountRecord): string {
+        return jwt.sign({ ver: tokenVersion }, this.settings.JWT_SECRET, {
             algorithm: TOKEN_ALGORITHM,
             subject: publicId,
             expiresIn: this.settings.JWT_EXPIRES_IN as SignOptions["expiresIn"],
         });
     }
 
-    private subjectOf(token: string): string {
+    private claimsOf(token: string): { subject: string; version: number } {
         try {
             const payload = jwt.verify(token, this.settings.JWT_SECRET, { algorithms: [TOKEN_ALGORITHM] });
             if (typeof payload !== "string" && payload.sub && UUID_PATTERN.test(payload.sub)) {
-                return payload.sub;
+                return { subject: payload.sub, version: payload.ver };
             }
         } catch {
             // Bad signature, expired or not a token at all: all answered the same way below

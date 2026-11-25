@@ -27,3 +27,6 @@ export const CORS_MAX_AGE_SECONDS = 600;
 
 export const REQUEST_ID_HEADER = "X-Request-Id";
 export const SAFE_REQUEST_ID = /^[A-Za-z0-9-]{8,64}$/;
+
+// A client sends the same key when it retries a sale or a stock change, so it happens only once
+export const IDEMPOTENCY_HEADER = "Idempotency-Key";

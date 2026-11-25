@@ -9,6 +9,8 @@ import { toPageDto } from "../../dto/page";
 import { currentUser } from "../../middleware/authenticate";
 import { Controller } from "../controller";
 import {
+    idempotencyHeaderSchema,
+    idempotencyInputOf,
     listQuerySchema,
     optionalText,
     outletItemParamsSchema,
@@ -52,16 +54,20 @@ export class InventoryController extends Controller implements InventoryControll
         return this.sendResponse({ response: toPageDto(page, toStockMovementDto) }, HttpStatus.OK, res);
     }
 
+    // 201 for a new change, 200 when the same request had already been completed
     async adjust(req: Request, res: Response): Promise<any> {
         const { value: params } = await this.validateRequest(outletItemParamsSchema, req.params);
+        const { value: headers } = await this.validateRequest(idempotencyHeaderSchema, idempotencyInputOf(req));
         const { value: body } = await this.validateRequest(adjustSchema, req.body);
-        const movement = await this.inventoryService.adjust(
+        const { movement, replayed } = await this.inventoryService.adjust(
             params.outletId,
             params.menuItemId,
             blankToNull(body),
+            headers.idempotencyKey,
             currentUser(res).id
         );
-        return this.sendResponse({ response: toStockMovementDto(movement) }, HttpStatus.CREATED, res);
+        const status = replayed ? HttpStatus.OK : HttpStatus.CREATED;
+        return this.sendResponse({ response: toStockMovementDto(movement) }, status, res);
     }
 }
 

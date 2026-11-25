@@ -1,13 +1,13 @@
 # API development: docker compose up --build
-# Settings come from .env in this folder. API: http://localhost:4000/api/v1 · pgAdmin: http://localhost:8080
+# Works on a fresh clone: settings come from .env.example, and from .env in this folder when it exists. API: http://localhost:4000/api/v1 · pgAdmin: http://localhost:8080
 services:
     db:
         image: postgres:16-alpine
         restart: unless-stopped
         environment:
-            POSTGRES_USER: ${POSTGRES_USER}
-            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-            POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_USER: ${POSTGRES_USER:-postgres}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+            POSTGRES_DB: ${POSTGRES_DB:-pos}
         ports:
             - "5432:5432"
         volumes:
@@ -28,8 +28,14 @@ services:
         depends_on:
             db:
                 condition: service_healthy
-        env_file: .env
+        # Later files win
+        env_file:
+            - path: .env.example
+            - path: .env
+              required: false
         environment:
+            # Demo data and demo logins in development, unless .env or the shell says otherwise
+            SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
             # Inside Docker the database is the db service
             POSTGRES_HOST: db
             POSTGRES_PORT: 5432
@@ -51,7 +57,7 @@ services:
                 condition: service_healthy
         environment:
             PGADMIN_DEFAULT_EMAIL: admin@example.com
-            PGADMIN_DEFAULT_PASSWORD: ${POSTGRES_PASSWORD}
+            PGADMIN_DEFAULT_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
             PGADMIN_CONFIG_SERVER_MODE: "False"
             PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
         ports:

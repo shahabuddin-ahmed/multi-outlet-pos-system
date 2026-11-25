@@ -1,12 +1,17 @@
 # Web development: docker compose up --build (or the root docker-compose.yml for the whole app)
-# Settings come from .env in this folder. Web: http://localhost:3000
+# Works on a fresh clone: settings come from .env.example, and from .env in this folder when it exists.
+# Web: http://localhost:3000
 services:
   web:
     build:
       context: .
       dockerfile: Dockerfile.dev
     restart: unless-stopped
-    env_file: .env
+    # Later files win
+    env_file:
+      - path: .env.example
+      - path: .env
+        required: false
     environment:
       # File events from macOS do not always reach Docker, so Next.js also checks for changes itself
       WATCHPACK_POLLING: 'true'

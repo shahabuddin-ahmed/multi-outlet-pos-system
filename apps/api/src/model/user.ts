@@ -14,11 +14,16 @@ export interface UserInterface {
     // NULL only for head office
     outletId: number | null;
     isActive: boolean;
+    // Raised by a password change; a login token made for an older version is refused
+    tokenVersion: number;
     createdAt: Date;
     updatedAt: Date;
 }
 
-export type UserCreation = Optional<UserInterface, "id" | "publicId" | "isActive" | "createdAt" | "updatedAt">;
+export type UserCreation = Optional<
+    UserInterface,
+    "id" | "publicId" | "isActive" | "tokenVersion" | "createdAt" | "updatedAt"
+>;
 
 class User extends Model<UserInterface, UserCreation> implements UserInterface {
     declare id: number;
@@ -29,6 +34,7 @@ class User extends Model<UserInterface, UserCreation> implements UserInterface {
     declare role: UserRole;
     declare outletId: number | null;
     declare isActive: boolean;
+    declare tokenVersion: number;
     declare readonly createdAt: Date;
     declare readonly updatedAt: Date;
 }
@@ -43,6 +49,7 @@ User.init(
         role: { type: new DataTypes.STRING(14), allowNull: false },
         outletId: { type: DataTypes.INTEGER, allowNull: true },
         isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+        tokenVersion: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
         createdAt: DataTypes.DATE,
         updatedAt: DataTypes.DATE,
     },

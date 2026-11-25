@@ -2,20 +2,22 @@ import { Request, Response } from "express";
 import Joi from "joi";
 import { PAGINATION } from "../../../constant/api";
 import { HttpStatus } from "../../../constant/http";
-import {
-    IDEMPOTENCY_HEADER,
-    OrderType,
-    PaymentMethod,
-    RECEIPT_SEARCH_PATTERN,
-    SALE_LIMITS,
-} from "../../../constant/sale";
+import { OrderType, PaymentMethod, RECEIPT_SEARCH_PATTERN, SALE_LIMITS } from "../../../constant/sale";
 import { SaleServiceInterface } from "../../../service/sale";
 import { blankToNull } from "../../../utils/utility";
 import { toPageDto } from "../../dto/page";
 import { toReceiptDto, toSaleSummaryDto } from "../../dto/sale";
 import { currentUser } from "../../middleware/authenticate";
 import { Controller } from "../controller";
-import { calendarDateSchema, optionalText, outletParamsSchema, pageFields, publicIdSchema } from "./common-schema";
+import {
+    calendarDateSchema,
+    idempotencyHeaderSchema,
+    idempotencyInputOf,
+    optionalText,
+    outletParamsSchema,
+    pageFields,
+    publicIdSchema,
+} from "./common-schema";
 
 export interface SaleControllerInterface {
     create(req: Request, res: Response): Promise<any>;
@@ -53,10 +55,6 @@ const saleSchema = Joi.object({
         .required(),
 });
 
-const headerSchema = Joi.object({
-    idempotencyKey: publicIdSchema.required().label(IDEMPOTENCY_HEADER),
-});
-
 const saleParamsSchema = Joi.object({
     outletId: publicIdSchema.required(),
     saleId: publicIdSchema.required(),
@@ -88,9 +86,7 @@ export class SaleController extends Controller implements SaleControllerInterfac
     // 201 for a new sale, 200 when the same request had already been completed
     async create(req: Request, res: Response): Promise<any> {
         const { value: params } = await this.validateRequest(outletParamsSchema, req.params);
-        const { value: headers } = await this.validateRequest(headerSchema, {
-            idempotencyKey: req.header(IDEMPOTENCY_HEADER)?.toLowerCase(),
-        });
+        const { value: headers } = await this.validateRequest(idempotencyHeaderSchema, idempotencyInputOf(req));
         const { value: body } = await this.validateRequest(saleSchema, req.body);
         const { sale, replayed } = await this.saleService.create(
             params.outletId,

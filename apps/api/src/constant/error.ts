@@ -108,7 +108,7 @@ export const errorMessages: Record<ERROR_CODES, { message: string }> = {
         message: "The cash received is less than the total",
     },
     E_IDEMPOTENCY_KEY_REUSED: {
-        message: "This retry key was already used for a different sale",
+        message: "This retry key was already used for a different request",
     },
 };
 
