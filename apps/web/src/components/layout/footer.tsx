@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSettings } from '@/features/settings/settings-provider';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -16,9 +17,13 @@ const API_STATE_VIEW: Record<ApiState, { label: string; dot: string }> = {
   [ApiState.UNAVAILABLE]: { label: 'API unavailable', dot: 'bg-red-600' }
 };
 
+// VAT arrives in basis points: 500 is 5%
+const BPS_PER_PERCENT = 100;
+
 export function Footer() {
   const [apiState, setApiState] = useState(ApiState.CHECKING);
   const view = API_STATE_VIEW[apiState];
+  const { currency, vatBps } = useSettings();
 
   useEffect(() => {
     api
@@ -33,6 +38,9 @@ export function Footer() {
       <span role="status" className="inline-flex items-center gap-1.5">
         <span aria-hidden="true" className={cn('size-2 rounded-full', view.dot)} />
         {view.label}
+      </span>
+      <span>
+        Money: {currency} · VAT {vatBps / BPS_PER_PERCENT}%
       </span>
     </footer>
   );
