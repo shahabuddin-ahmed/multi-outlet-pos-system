@@ -1,8 +1,15 @@
 import type { Metadata } from 'next';
-import { ComingSoon } from '@/components/shared/coming-soon';
+import { Suspense } from 'react';
+import { PageState } from '@/components/shared/page-state';
+import { StockView } from '@/features/stock/stock-view';
 
 export const metadata: Metadata = { title: 'Stock' };
 
 export default function StockPage() {
-  return <ComingSoon title="Stock" text="Stock of each item at an outlet" />;
+  // The view reads the address (?outlet=), which is only known in the browser
+  return (
+    <Suspense fallback={<PageState message="Loading…" />}>
+      <StockView />
+    </Suspense>
+  );
 }

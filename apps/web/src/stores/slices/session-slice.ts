@@ -30,7 +30,9 @@ const sessionSlice = createSlice({
   }
 });
 
-const { restoring, unreachable, signedOut, signedIn } = sessionSlice.actions;
+const { restoring, unreachable, signedIn } = sessionSlice.actions;
+// Also read by other slices, which forget what belonged to the person
+export const { signedOut } = sessionSlice.actions;
 
 export const signOut =
   (notice = '') =>

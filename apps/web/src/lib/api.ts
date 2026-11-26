@@ -11,7 +11,15 @@ import type {
   MenuItemInput,
   Outlet,
   OutletInput,
+  OutletMenuItem,
   Paged,
+  Receipt,
+  SaleQuery,
+  SaleRequest,
+  SaleSummary,
+  StockChange,
+  StockLine,
+  StockMovement,
   User
 } from '@/types';
 
@@ -20,6 +28,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1
 const INVALID_DATA = 'E_INVALID_DATA';
 const REQUEST_FAILED = 'REQUEST_FAILED';
 const UNAUTHORIZED = 401;
+// A request without an answer by then counts as unanswered, so nobody waits for ever
+const REQUEST_TIMEOUT_MS = 20_000;
+const IDEMPOTENCY_HEADER = 'Idempotency-Key';
 
 export class ApiError extends Error {
   constructor(
@@ -73,7 +84,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_URL}${path}`, { ...init, headers, cache: 'no-store' });
+  const response = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers,
+    cache: 'no-store',
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  });
   const payload: ApiEnvelope<T> | null = await response.json().catch(() => null);
 
   if (!response.ok || !payload) {
@@ -100,8 +116,12 @@ function queryOf(values: object): string {
   return query ? `?${query}` : '';
 }
 
-const send = <T>(method: 'POST' | 'PUT' | 'PATCH', path: string, body: object) =>
-  request<T>(path, { method, body: JSON.stringify(body) });
+const send = <T>(method: 'POST' | 'PUT' | 'PATCH', path: string, body: object, headers?: HeadersInit) =>
+  request<T>(path, { method, headers, body: JSON.stringify(body) });
+
+// A write that happens once however often it is sent with the same key
+const sendOnce = <T>(path: string, key: string, body: object) =>
+  send<T>('POST', path, body, { [IDEMPOTENCY_HEADER]: key });
 
 // Every API call lives here, so a page never builds a URL itself
 export const api = {
@@ -124,5 +144,25 @@ export const api = {
     request<Paged<Assignment>>(`/outlets/${outletId}/assignments${queryOf(query)}`),
   // Assigns the item, or changes how the outlet sells it
   saveAssignment: (outletId: string, menuItemId: string, assignment: AssignmentInput) =>
-    send<Assignment>('PUT', `/outlets/${outletId}/assignments/${menuItemId}`, assignment)
+    send<Assignment>('PUT', `/outlets/${outletId}/assignments/${menuItemId}`, assignment),
+
+  outletMenu: (outletId: string, query: ListQuery) =>
+    request<Paged<OutletMenuItem>>(`/outlets/${outletId}/menu${queryOf(query)}`),
+
+  createSale: (outletId: string, key: string, sale: SaleRequest) =>
+    sendOnce<Receipt>(`/outlets/${outletId}/sales`, key, sale),
+  // The ids come from the address bar, so they are encoded
+  receipt: (outletId: string, saleId: string) =>
+    request<Receipt>(`/outlets/${encodeURIComponent(outletId)}/sales/${encodeURIComponent(saleId)}`),
+  listOutletSales: (outletId: string, query: SaleQuery) =>
+    request<Paged<SaleSummary>>(`/outlets/${outletId}/sales${queryOf(query)}`),
+  // Every outlet, for head office
+  listSales: (query: SaleQuery) => request<Paged<SaleSummary>>(`/sales${queryOf(query)}`),
+
+  listStock: (outletId: string, query: ListQuery) =>
+    request<Paged<StockLine>>(`/outlets/${outletId}/inventory${queryOf(query)}`),
+  stockHistory: (outletId: string, menuItemId: string, query: ListQuery) =>
+    request<Paged<StockMovement>>(`/outlets/${outletId}/inventory/${menuItemId}/movements${queryOf(query)}`),
+  changeStock: (outletId: string, menuItemId: string, key: string, change: StockChange) =>
+    sendOnce<StockMovement>(`/outlets/${outletId}/inventory/${menuItemId}/adjustments`, key, change)
 };
