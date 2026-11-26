@@ -91,6 +91,141 @@ export interface AssignmentInput {
   isAvailable: boolean;
 }
 
+// One item an outlet can sell, as the till shows it
+export interface OutletMenuItem {
+  menuItemId: string;
+  sku: string;
+  name: string;
+  effectivePriceCents: number;
+  priceSource: 'BASE' | 'OUTLET';
+  stock: number;
+  outOfStock: boolean;
+}
+
+export type OrderType = 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
+export type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_BANKING';
+
+export interface SaleRequest {
+  orderType: OrderType;
+  tableLabel: string | null;
+  payment: { method: PaymentMethod; cashReceivedCents: number | null; reference: string | null };
+  // The total shown to the customer; the API refuses the sale when its own differs
+  expectedTotalCents: number;
+  items: { menuItemId: string; quantity: number }[];
+}
+
+export interface SaleLine {
+  menuItemId: string;
+  name: string;
+  quantity: number;
+  unitPriceCents: number;
+  lineTotalCents: number;
+}
+
+// Sent with E_PRICE_CHANGED
+export interface PriceChange {
+  lines: SaleLine[];
+  subtotalCents: number;
+  vatBps: number;
+  vatCents: number;
+  totalCents: number;
+}
+
+// Sent with E_INSUFFICIENT_STOCK
+export interface StockShortage {
+  items: { menuItemId: string; name: string; requested: number; available: number }[];
+}
+
+// Sent with E_ITEM_NOT_SELLABLE
+export interface UnsellableItems {
+  items: { menuItemId: string; name: string | null }[];
+}
+
+export interface Receipt {
+  id: string;
+  receiptCode: string;
+  receiptNumber: number;
+  createdAt: string;
+  orderType: OrderType;
+  tableLabel: string | null;
+  items: (SaleLine & { sku: string })[];
+  subtotalCents: number;
+  vatBps: number;
+  vatCents: number;
+  totalCents: number;
+  payment: {
+    method: PaymentMethod;
+    reference: string | null;
+    cashReceivedCents: number | null;
+    changeCents: number | null;
+  };
+  // As it was when the sale was made
+  header: {
+    companyName: string;
+    companyTaxNo: string;
+    footer: string;
+    currency: string;
+    timezone: string;
+    cashierName: string;
+    outlet: { code: string; name: string; address: string | null; phone: string | null };
+  };
+}
+
+export interface SaleSummary {
+  id: string;
+  receiptCode: string;
+  createdAt: string;
+  orderType: OrderType;
+  tableLabel: string | null;
+  paymentMethod: PaymentMethod;
+  totalCents: number;
+  itemCount: number;
+  cashierName: string;
+  outlet: { id: string; code: string; name: string };
+}
+
+export interface SaleQuery {
+  offset: number;
+  limit: number;
+  // "DHK-000042" or "42"
+  receipt?: string;
+  // Business days as YYYY-MM-DD
+  from?: string;
+  to?: string;
+}
+
+export interface StockLine {
+  menuItemId: string;
+  sku: string;
+  name: string;
+  stock: number;
+  lowStock: boolean;
+  outOfStock: boolean;
+  isSellable: boolean;
+  updatedAt: string;
+}
+
+// What a person may choose; the others are written by the system
+export type ManualStockReason = 'RESTOCK' | 'WASTE' | 'ADJUSTMENT';
+export type StockReason = ManualStockReason | 'SALE' | 'VOID';
+
+export interface StockChange {
+  delta: number;
+  reason: ManualStockReason;
+  note: string | null;
+}
+
+export interface StockMovement {
+  id: string;
+  delta: number;
+  quantityAfter: number;
+  reason: StockReason;
+  userName: string | null;
+  note: string | null;
+  receiptCode: string | null;
+  createdAt: string;
+}
+
 export interface ListQuery {
   offset: number;
   limit: number;

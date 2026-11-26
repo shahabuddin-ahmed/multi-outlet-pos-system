@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { ComingSoon } from '@/components/shared/coming-soon';
+import { TillView } from '@/features/till/till-view';
 
 export const metadata: Metadata = { title: 'Till' };
 
 export default function TillPage() {
-  return <ComingSoon title="Till" text="Make a sale" />;
+  return <TillView />;
 }

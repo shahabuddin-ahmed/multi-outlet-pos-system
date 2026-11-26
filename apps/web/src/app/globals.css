@@ -35,3 +35,29 @@ body {
 ::selection {
   background-color: hsl(var(--primary) / 0.18);
 }
+
+/* Printing gives the receipt alone, sized for an 80 mm printer */
+.print-area {
+  display: none;
+}
+
+@media print {
+  body > *:not(.print-area) {
+    display: none !important;
+  }
+
+  /* An open dialog locks scrolling, which would cut a long receipt off */
+  body {
+    background: white;
+    overflow: visible !important;
+  }
+
+  .print-area {
+    display: block;
+    width: 72mm;
+  }
+
+  @page {
+    margin: 4mm;
+  }
+}

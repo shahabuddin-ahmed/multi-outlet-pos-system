@@ -14,7 +14,7 @@ export interface Formatters {
   dateTime: (moment: string | Date) => string;
 }
 
-export function newFormatters({ currency, timezone }: AppConfig): Formatters {
+export function newFormatters({ currency, timezone }: Pick<AppConfig, 'currency' | 'timezone'>): Formatters {
   const money = new Intl.NumberFormat(MONEY_LOCALE, { style: 'currency', currency, currencyDisplay: 'narrowSymbol' });
   const date = new Intl.DateTimeFormat(DATE_LOCALE, { ...DAY, timeZone: timezone });
   const dateTime = new Intl.DateTimeFormat(DATE_LOCALE, {

@@ -27,7 +27,13 @@ Never recompute a rule in the browser. Money travels as integer cents; `formatMo
 - **Pages and roles** are listed once, in `src/lib/access.ts`; the menu and the page guard both read it. A page that is
   not listed is closed. This only hides things: the API is what refuses.
 - **Session:** the token is kept by `src/lib/token.ts`; sign in and out through `session-slice`. A 401 signs out.
-- **Money and dates** are shown with `useSettings()` (the API's currency and business time zone).
+- **Money and dates** are shown with `useSettings()` (the API's currency and business time zone). A receipt uses
+  what was saved with its sale instead.
+- **The one sum in the browser** is `src/lib/estimate.ts`: the total the till shows and sends as
+  `expectedTotalCents`. The API decides; it must round the same way.
+- **Sales and stock changes** carry a retry key. While `isSettled` (`src/lib/retry.ts`) says no, only the same request
+  with the same key may be sent again. The cart is locked in its reducer, and an unconfirmed sale is kept in local
+  storage (`src/lib/pending-sale.ts`).
 - **Styling:** Tailwind classes with `cn`; reuse `components/ui` before adding a new part; icons from `lucide-react`;
   toasts with `sonner`.
 - **Accessibility:** every control has a label and works with the keyboard.
