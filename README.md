@@ -466,8 +466,9 @@ rollback when the last step fails.
 | `yarn format:check`                   | Formatting                      |
 | `yarn build`                          | Production build                |
 
-GitHub Actions runs on every pull request: lint, format, API tests, builds, a security audit of the shipped packages
-and the API image build. See [.github/workflows/ci.yml](.github/workflows/ci.yml). The web app has no automated tests.
+GitHub Actions runs on every push to `master`: lint, format, API tests, builds, a security audit of the shipped
+packages and the API image build. See [.github/workflows/ci.yml](.github/workflows/ci.yml). Other branches and pull
+requests are not built, and the web app is deployed only from `master`. The web app has no automated tests.
 
 ## Not built
 
