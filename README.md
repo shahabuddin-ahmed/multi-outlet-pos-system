@@ -69,7 +69,8 @@ docker compose up --build
 | API health            | `http://localhost:4000/api/v1/health` |
 | pgAdmin (database UI) | `http://localhost:8080`               |
 
-The database is created, migrated and filled with [demo data](#demo-data). Pick a demo account on the login page.
+The database is created, migrated and filled with [demo data](#demo-data). Pick a demo account on the login page, then
+follow the [demo walkthrough](#demo-walkthrough).
 
 To change a setting, copy `.env.example` to `.env` in `apps/api` or `apps/web`. The example files switch the demo off:
 set `SEED_DEMO_DATA=true` for the API and `NEXT_PUBLIC_DEMO_PASSWORD` for the web app to keep it. After packages
@@ -118,8 +119,22 @@ Password for all of them: `demo-pos-2026`
 
 **These accounts have a public password: never switch this on for a real installation.**
 
-A short tour: sign in as a cashier and make a sale on the **Till**, open its receipt, then sign in as HQ and see it on
-the **Dashboard** and in **Reports**.
+### Demo walkthrough
+
+One item from the head office menu to the reports, with the demo data and its 5% VAT. To switch accounts, use **Sign
+out** in the account menu at the top right.
+
+| Step | Sign in as          | Do this                                                                                                   | You should see                                                                      |
+| ---- | ------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| 1    | HQ admin            | **Reports**: note the Dhanmondi row                                                                       | Its sales count and amounts before the new sale                                     |
+| 2    | HQ admin            | **Menu items** > **New item**: SKU `DR-100`, name `Mango Lassi`, base price `150`                         | The item in the master menu                                                         |
+| 3    | HQ admin            | **Assign menu** > Dhanmondi: search the item, press **Assign**, type outlet price `140`, then press Enter | **Outlet price**; the customer pays ৳140.00; stock 0                                |
+| 4    | HQ admin            | **Stock** > Dhanmondi: search the item, press **Restock**, enter `10`, then **Save**                      | 10 in stock                                                                         |
+| 5    | Cashier · Dhanmondi | **Till**: tap the item twice, enter cash received `500`, press **Complete sale**                          | A receipt with the next DHK number: subtotal ৳280, VAT ৳14, total ৳294, change ৳206 |
+| 6    | HQ admin            | **Stock** > Dhanmondi: search the item, press **History**                                                 | 8 in stock; a sale of -2 with the receipt number                                    |
+| 7    | HQ admin            | **Sales history**, then **Reports**                                                                       | The sale first in the list; Dhanmondi up by 1 sale, ৳280 net and ৳14 VAT            |
+
+A menu item cannot be deleted, so use another SKU to repeat the walkthrough.
 
 ## Staff accounts and roles
 
@@ -425,7 +440,8 @@ yarn test
 ```
 
 They include 50 buyers competing for the last 10 items (10 sales, receipts 1 to 10, stock 0), sales on two outlets at
-once, baskets in opposite order, one retry key sent five times at once, and a rollback when the last step fails.
+once, baskets in opposite order, one retry key sent five times at once, a basket with only one item short, and a
+rollback when the last step fails.
 
 | Command (in `apps/api` or `apps/web`) | Checks                          |
 | ------------------------------------- | ------------------------------- |
