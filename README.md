@@ -6,8 +6,25 @@ keeps its own stock, and HQ sees the reports.
 **Architecture document:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (ERD, scaling plan, microservices, offline POS
 and kitchen display).
 
+## Live demo
+
+**App:** https://multi-outlet-pos-system.vercel.app
+
+**API health check:** https://multi-outlet-pos-api.onrender.com/api/v1/health
+
+Sign in with one of the demo account buttons, then follow the [demo walkthrough](#demo-walkthrough). The accounts are
+listed under [Demo data](#demo-data).
+
+-   **First visit:** the API runs on a free plan that sleeps after 15 minutes without visitors. A sign-in may answer
+    "Could not reach the POS API." while it wakes up: wait about a minute and sign in again.
+-   **Shared data:** all visitors use the same demo data, so amounts can differ. If SKU `DR-100` already exists, use
+    another SKU in the walkthrough.
+
+Hosted on Vercel (web, `apps/web`), Render (API, built from `apps/api/Dockerfile`) and Neon (PostgreSQL).
+
 ## Contents
 
+-   [Live demo](#live-demo)
 -   [What it does](#what-it-does)
 -   [Quick start](#quick-start)
 -   [Run without Docker](#run-without-docker)
