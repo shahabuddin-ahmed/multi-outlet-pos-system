@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, UtensilsCrossed } from 'lucide-react';
 import { ConfirmSwitchOff } from '@/components/shared/confirm-switch-off';
-import { ListCard, SearchInput } from '@/components/shared/list-card';
+import { noMatch } from '@/components/shared/empty-state';
+import { ListCard } from '@/components/shared/list-card';
+import { SearchInput } from '@/components/shared/search-input';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -40,12 +42,24 @@ export function MenuItemsView() {
       <ListCard
         page={list.data}
         error={list.error}
+        loading={list.loading}
+        columns={5}
         onRetry={list.reload}
         onPage={list.setOffset}
         empty={
           list.searching
-            ? { title: 'Nothing matches' }
-            : { title: 'No items yet', text: 'Create the first one to start.' }
+            ? noMatch('No item has this name or SKU.', () => list.setSearch(''))
+            : {
+                icon: UtensilsCrossed,
+                title: 'No items yet',
+                text: 'Create the first one to start.',
+                children: (
+                  <Button size="sm" onClick={() => setEditing('new')}>
+                    <Plus aria-hidden="true" className="size-4" />
+                    New item
+                  </Button>
+                )
+              }
         }
       >
         <Table>

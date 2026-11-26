@@ -2,11 +2,15 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { PackageCheck } from 'lucide-react';
+import { EmptyState } from '@/components/shared/empty-state';
 import { PageState } from '@/components/shared/page-state';
 import { Pager } from '@/components/shared/pager';
+import { Refreshing } from '@/components/shared/refreshing';
+import { TableSkeleton } from '@/components/shared/skeletons';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Row, Table, TableHead, Td, Th } from '@/components/ui/table';
 import { useApiData } from '@/hooks/use-api-data';
 import { api } from '@/lib/api';
@@ -22,61 +26,68 @@ export function LowStockCard() {
   const list = useApiData(load);
 
   if (!list.data) {
-    return <PageState message={list.error || 'Loading…'} error={Boolean(list.error)} onRetry={list.reload} />;
+    return (
+      <PageState
+        message={list.error || 'Loading…'}
+        error={Boolean(list.error)}
+        onRetry={list.reload}
+        skeleton={<TableSkeleton columns={5} rows={4} />}
+      />
+    );
   }
   const { data, limit, total } = list.data;
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle>Low stock ({LOW_STOCK} or fewer)</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Stock right now, whatever the period: items on sale at active outlets. Restock from the Stock page.
-        </p>
-      </CardHeader>
-      {total === 0 ? (
-        <CardContent>
-          <p className="py-4 text-center text-sm text-muted-foreground">No item is low on stock.</p>
-        </CardContent>
-      ) : (
-        <>
-          <Table>
-            <TableHead>
-              <Th>Outlet</Th>
-              <Th>Item</Th>
-              <Th className="text-right">In stock</Th>
-              <Th>Status</Th>
-              <Th>
-                <span className="sr-only">Actions</span>
-              </Th>
-            </TableHead>
-            <tbody>
-              {data.map((line) => (
-                <Row key={`${line.outlet.id}:${line.menuItemId}`}>
-                  <Td className="whitespace-nowrap">
-                    {line.outlet.name} <span className="text-muted-foreground">{line.outlet.code}</span>
-                  </Td>
-                  <Td>{line.name}</Td>
-                  <Td className="text-right font-semibold tabular-nums">{line.stock}</Td>
-                  <Td>{line.outOfStock ? <Badge variant="error">Out</Badge> : <Badge variant="warn">Low</Badge>}</Td>
-                  <Td className="text-right">
-                    <Link
-                      href={`/stock?outlet=${line.outlet.id}`}
-                      aria-label={`Open stock of ${line.outlet.name}`}
-                      className={buttonVariants({ variant: 'outline', size: 'sm' })}
-                    >
-                      Open stock
-                    </Link>
-                  </Td>
-                </Row>
-              ))}
-            </tbody>
-          </Table>
-          <div className="border-t px-4 py-3">
-            <Pager offset={offset} limit={limit} total={total} onChange={setOffset} />
-          </div>
-        </>
-      )}
-    </Card>
+    <Refreshing active={list.loading}>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Low stock ({LOW_STOCK} or fewer)</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Stock right now, whatever the period: items on sale at active outlets. Restock from the Stock page.
+          </p>
+        </CardHeader>
+        {total === 0 ? (
+          <EmptyState icon={PackageCheck} title="No item is low on stock" />
+        ) : (
+          <>
+            <Table>
+              <TableHead>
+                <Th>Outlet</Th>
+                <Th>Item</Th>
+                <Th className="text-right">In stock</Th>
+                <Th>Status</Th>
+                <Th>
+                  <span className="sr-only">Actions</span>
+                </Th>
+              </TableHead>
+              <tbody>
+                {data.map((line) => (
+                  <Row key={`${line.outlet.id}:${line.menuItemId}`}>
+                    <Td className="whitespace-nowrap">
+                      {line.outlet.name} <span className="text-muted-foreground">{line.outlet.code}</span>
+                    </Td>
+                    <Td>{line.name}</Td>
+                    <Td className="text-right font-semibold tabular-nums">{line.stock}</Td>
+                    <Td>{line.outOfStock ? <Badge variant="error">Out</Badge> : <Badge variant="warn">Low</Badge>}</Td>
+                    <Td className="text-right">
+                      <Link
+                        href={`/stock?outlet=${line.outlet.id}`}
+                        aria-label={`Open stock of ${line.outlet.name}`}
+                        className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                      >
+                        Open stock
+                      </Link>
+                    </Td>
+                  </Row>
+                ))}
+              </tbody>
+            </Table>
+            <div className="border-t px-4 py-3">
+              <Pager offset={offset} limit={limit} total={total} onChange={setOffset} />
+            </div>
+          </>
+        )}
+      </Card>
+    </Refreshing>
   );
 }

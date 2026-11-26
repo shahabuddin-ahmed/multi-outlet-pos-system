@@ -2,12 +2,13 @@
 
 import { useMemo } from 'react';
 import { PageState } from '@/components/shared/page-state';
+import { Refreshing } from '@/components/shared/refreshing';
+import { ListSkeleton } from '@/components/shared/skeletons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OutletSelect } from '@/features/outlets/outlet-select';
 import { TopItemsList } from '@/features/reports/top-items-list';
 import { useApiData } from '@/hooks/use-api-data';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
 import type { PeriodQuery, ReportOutlet } from '@/types';
 
 function OutletBestSellers({ outletId, period }: { outletId: string; period: PeriodQuery }) {
@@ -15,13 +16,20 @@ function OutletBestSellers({ outletId, period }: { outletId: string; period: Per
   const top = useApiData(load);
 
   if (!top.data) {
-    return <PageState message={top.error || 'Loading…'} error={Boolean(top.error)} onRetry={top.reload} />;
+    return (
+      <PageState
+        message={top.error || 'Loading…'}
+        error={Boolean(top.error)}
+        onRetry={top.reload}
+        skeleton={<ListSkeleton />}
+      />
+    );
   }
 
   return (
-    <div aria-busy={top.loading} className={cn(top.loading && 'opacity-60')}>
+    <Refreshing active={top.loading}>
       <TopItemsList items={top.data.data[0]?.items ?? []} />
-    </div>
+    </Refreshing>
   );
 }
 

@@ -1,3 +1,4 @@
+import { ChartColumn } from 'lucide-react';
 import { useSettings } from '@/features/settings/settings-provider';
 import type { TopItem } from '@/types';
 
@@ -6,7 +7,12 @@ export function TopItemsList({ items }: { items: TopItem[] }) {
   const { count } = useSettings();
 
   if (items.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">No sales in this period</p>;
+    return (
+      <div className="flex flex-col items-center gap-2 py-6 text-sm text-muted-foreground">
+        <ChartColumn aria-hidden="true" className="size-5" />
+        No sales in this period
+      </div>
+    );
   }
 
   return (

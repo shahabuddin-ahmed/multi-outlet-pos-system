@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'sonner';
-import { EmptyState } from '@/components/shared/empty-state';
-import { SearchInput } from '@/components/shared/list-card';
+import { EmptyState, noMatch } from '@/components/shared/empty-state';
+import { SearchInput } from '@/components/shared/search-input';
 import { PageHeader } from '@/components/shared/page-header';
 import { PageState } from '@/components/shared/page-state';
+import { Refreshing } from '@/components/shared/refreshing';
 import { Banner } from '@/components/ui/banner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,7 +16,7 @@ import { ReceiptPanel } from '@/features/receipt/receipt-panel';
 import { useUser } from '@/features/session/use-user';
 import { useSettings } from '@/features/settings/settings-provider';
 import { CartPanel } from '@/features/till/cart-panel';
-import { MenuGrid } from '@/features/till/menu-grid';
+import { MenuGrid, MenuGridSkeleton } from '@/features/till/menu-grid';
 import { useApiData } from '@/hooks/use-api-data';
 import { useAppDispatch, useAppSelector } from '@/hooks/use-app-redux';
 import { api } from '@/lib/api';
@@ -49,6 +50,7 @@ export function TillView() {
   const wanted = search.trim().toLowerCase();
   const shown = menu.data?.filter((item) => `${item.name} ${item.sku}`.toLowerCase().includes(wanted)) ?? [];
   const count = draft.lines.reduce((sum, line) => sum + line.quantity, 0);
+  const inCart = new Map(draft.lines.map((line) => [line.menuItemId, line.quantity]));
   const total = estimateTotals(draft.lines, draft.vatBps ?? vatBps).totalCents;
 
   const add = (item: OutletMenuItem) => {
@@ -62,42 +64,57 @@ export function TillView() {
 
   return (
     <>
-      <PageHeader title="Till" text={`${outlet!.name} · ${fullName}`}>
-        <SearchInput label="Search items" value={search} onChange={setSearch} />
-      </PageHeader>
-
+      {/* The title is above the items only, so that the cart gets the height of the screen */}
       <div className="grid items-start gap-4 min-[720px]:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_390px]">
-        <div>
+        <div className="flex flex-col gap-6">
+          <PageHeader title="Till" text={`${outlet!.name} · ${fullName}`}>
+            <SearchInput label="Search items" value={search} onChange={setSearch} />
+          </PageHeader>
           {!menu.data && (
-            <PageState message={menu.error || 'Loading…'} error={Boolean(menu.error)} onRetry={menu.reload} />
+            <PageState
+              message={menu.error || 'Loading…'}
+              error={Boolean(menu.error)}
+              onRetry={menu.reload}
+              skeleton={<MenuGridSkeleton />}
+            />
           )}
           {menu.data && shown.length === 0 && (
             <Card>
               <EmptyState
-                icon={Search}
-                title="No items to sell"
-                text={
-                  wanted ? 'Nothing matches your search.' : 'Head office has not assigned items to this outlet yet.'
-                }
+                {...(wanted
+                  ? noMatch('No item on this menu has this name or SKU.', () => setSearch(''))
+                  : {
+                      icon: UtensilsCrossed,
+                      title: 'No items to sell',
+                      text: 'Head office has not assigned items to this outlet yet.'
+                    })}
               />
             </Card>
           )}
-          <MenuGrid items={shown} money={money} disabled={isLocked(checkout)} onAdd={add} />
+          {menu.data && (
+            // Not faded: the cashier goes on adding items while stock and prices are read again
+            <Refreshing active={menu.loading} fade={false}>
+              <MenuGrid items={shown} inCart={inCart} money={money} disabled={isLocked(checkout)} onAdd={add} />
+            </Refreshing>
+          )}
         </div>
 
         {/* Shown even when the menu cannot be loaded: an unconfirmed sale must stay in reach */}
         <Card
           className={cn(
-            'p-4 min-[720px]:sticky min-[720px]:top-3 min-[720px]:block min-[720px]:max-h-[calc(100vh-1.5rem)] min-[720px]:overflow-y-auto',
+            // Less the bar above the page, so it fits the screen
+            'flex-col min-[720px]:sticky min-[720px]:top-3 min-[720px]:flex min-[720px]:max-h-[calc(100dvh-7rem)]',
             cartOpen
-              ? 'max-[719px]:fixed max-[719px]:inset-0 max-[719px]:z-30 max-[719px]:overflow-y-auto max-[719px]:rounded-none'
+              ? 'max-[719px]:fixed max-[719px]:inset-0 max-[719px]:z-30 max-[719px]:flex max-[719px]:rounded-none'
               : 'max-[719px]:hidden'
           )}
         >
-          <Button variant="outline" size="sm" className="mb-3 min-[720px]:hidden" onClick={() => setCartOpen(false)}>
-            <ArrowLeft aria-hidden="true" className="size-4" />
-            Back to items
-          </Button>
+          <div className="px-4 pt-3 min-[720px]:hidden">
+            <Button variant="outline" size="sm" onClick={() => setCartOpen(false)}>
+              <ArrowLeft aria-hidden="true" className="size-4" />
+              Back to items
+            </Button>
+          </div>
           <CartPanel />
         </Card>
       </div>

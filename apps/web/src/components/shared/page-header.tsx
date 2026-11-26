@@ -14,7 +14,7 @@ export function PageHeader({ title, text, children }: PageHeaderProps) {
         <h1 className="text-[22px] font-bold tracking-tight">{title}</h1>
         {text && <p className="mt-1 text-sm text-muted-foreground">{text}</p>}
       </div>
-      {children && <div className="flex flex-wrap items-center gap-3">{children}</div>}
+      {children && <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">{children}</div>}
     </div>
   );
 }

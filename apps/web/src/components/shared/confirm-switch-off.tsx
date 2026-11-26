@@ -19,7 +19,7 @@ export function ConfirmSwitchOff({ name, effect, busy, onKeep, onSwitchOff }: Co
         <Button variant="outline" onClick={onKeep}>
           Keep on
         </Button>
-        <Button variant="destructive" disabled={busy} onClick={onSwitchOff}>
+        <Button variant="destructive" loading={busy} onClick={onSwitchOff}>
           Switch off
         </Button>
       </div>

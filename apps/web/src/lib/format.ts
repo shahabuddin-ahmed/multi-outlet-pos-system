@@ -14,11 +14,16 @@ export interface Formatters {
   // Days and times are those of the business, whatever the clock of this computer says
   date: (moment: string | Date) => string;
   dateTime: (moment: string | Date) => string;
+  // A calendar day (YYYY-MM-DD), which no time zone may move
+  day: (day: string) => string;
+  // The sign written in front of an amount, e.g. ৳
+  currencySymbol: string;
 }
 
 export function newFormatters({ currency, timezone }: Pick<AppConfig, 'currency' | 'timezone'>): Formatters {
   const money = new Intl.NumberFormat(NUMBER_LOCALE, { style: 'currency', currency, currencyDisplay: 'narrowSymbol' });
   const whole = new Intl.NumberFormat(NUMBER_LOCALE);
+  const calendarDay = new Intl.DateTimeFormat(DATE_LOCALE, { ...DAY, timeZone: 'UTC' });
   const date = new Intl.DateTimeFormat(DATE_LOCALE, { ...DAY, timeZone: timezone });
   const dateTime = new Intl.DateTimeFormat(DATE_LOCALE, {
     ...DAY,
@@ -32,6 +37,8 @@ export function newFormatters({ currency, timezone }: Pick<AppConfig, 'currency'
     money: (cents) => money.format(cents / CENTS_PER_UNIT),
     count: (value) => whole.format(value),
     date: (moment) => date.format(new Date(moment)),
-    dateTime: (moment) => dateTime.format(new Date(moment))
+    dateTime: (moment) => dateTime.format(new Date(moment)),
+    day: (value) => calendarDay.format(new Date(`${value}T00:00:00Z`)),
+    currencySymbol: money.formatToParts(0).find((part) => part.type === 'currency')?.value ?? currency
   };
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { History } from 'lucide-react';
 import { ListCard } from '@/components/shared/list-card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog } from '@/components/ui/dialog';
@@ -30,9 +31,15 @@ export function StockHistoryDialog({ outletId, line, onClose }: StockHistoryDial
       <ListCard
         page={list.data}
         error={list.error}
+        loading={list.loading}
+        columns={6}
         onRetry={list.reload}
         onPage={list.setOffset}
-        empty={{ title: 'No changes yet' }}
+        empty={{
+          icon: History,
+          title: 'No changes yet',
+          text: 'Restocks, corrections, waste and sales are listed here.'
+        }}
       >
         <Table>
           <TableHead>

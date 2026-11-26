@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import { SearchX, type LucideIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-interface EmptyStateProps {
+export interface EmptyStateProps {
   icon: LucideIcon;
   title: string;
   text?: string;
+  // What to do about it: a button or a link
   children?: ReactNode;
 }
 
@@ -19,4 +21,18 @@ export function EmptyState({ icon: Icon, title, text, children }: EmptyStateProp
       {children && <div className="flex flex-wrap justify-center gap-2.5 pt-2">{children}</div>}
     </div>
   );
+}
+
+// For a search or filter that finds nothing, with the way back
+export function noMatch(text: string, onClear: () => void, label = 'Clear search'): EmptyStateProps {
+  return {
+    icon: SearchX,
+    title: 'Nothing matches',
+    text,
+    children: (
+      <Button variant="outline" size="sm" onClick={onClear}>
+        {label}
+      </Button>
+    )
+  };
 }

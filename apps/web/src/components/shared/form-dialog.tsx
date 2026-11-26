@@ -8,21 +8,23 @@ import { errorMessage } from '@/lib/api';
 
 interface FormDialogProps extends PropsWithChildren {
   title: string;
-  // Throws to keep the form open and show why: an Error of its own, or the API's answer
+  // False keeps the form from being sent: the fields then show what is wrong
+  validate: () => boolean;
+  // Throws to keep the form open and show the API's answer
   onSave: () => Promise<void>;
   onClose: () => void;
 }
 
-// An input the form itself refuses, before anything is sent
-export class FormError extends Error {}
-
 // A form in a dialog that saves once at a time and shows what went wrong
-export function FormDialog({ title, onSave, onClose, children }: FormDialogProps) {
+export function FormDialog({ title, validate, onSave, onClose, children }: FormDialogProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!validate()) {
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -30,14 +32,15 @@ export function FormDialog({ title, onSave, onClose, children }: FormDialogProps
       toast.success('Saved');
       onClose();
     } catch (failure) {
-      setError(failure instanceof FormError ? failure.message : errorMessage(failure));
+      setError(errorMessage(failure));
       setSaving(false);
     }
   };
 
   return (
     <Dialog title={title} onClose={onClose}>
-      <form onSubmit={submit} className="flex flex-col gap-3">
+      {/* The app checks the fields itself, so the browser's own pop-ups stay away */}
+      <form onSubmit={submit} noValidate className="flex flex-col gap-3">
         {children}
         <p role="alert" className="text-sm text-red-700 empty:hidden">
           {error}
@@ -46,7 +49,7 @@ export function FormDialog({ title, onSave, onClose, children }: FormDialogProps
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" loading={saving}>
             {saving ? 'Saving…' : 'Save'}
           </Button>
         </div>
