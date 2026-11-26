@@ -2,7 +2,7 @@ import { Select } from '@/components/ui/select';
 import type { Outlet } from '@/types';
 
 interface OutletSelectProps {
-  outlets: Outlet[];
+  outlets: Pick<Outlet, 'id' | 'name' | 'code'>[];
   // Empty for all outlets
   value: string;
   withAll?: boolean;

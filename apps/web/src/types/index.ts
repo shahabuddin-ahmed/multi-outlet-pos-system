@@ -238,3 +238,53 @@ export interface Paged<T> {
   limit: number;
   total: number;
 }
+
+// Left out: all time. Either a ready-made range or own business days (YYYY-MM-DD), never both.
+export interface PeriodQuery {
+  range?: 'today' | 'month';
+  from?: string;
+  to?: string;
+}
+
+export type PageQuery = Pick<ListQuery, 'offset' | 'limit'>;
+
+export interface SalesTotals {
+  salesCount: number;
+  // Before VAT
+  netSalesCents: number;
+  vatCents: number;
+  totalCents: number;
+}
+
+export type ReportOutlet = Pick<Outlet, 'id' | 'code' | 'name' | 'isActive'>;
+
+export interface OutletRevenue extends SalesTotals {
+  outlet: ReportOutlet;
+}
+
+export interface RevenueReport extends Paged<OutletRevenue> {
+  // All outlets together, whatever page is shown
+  totals: SalesTotals;
+}
+
+export interface TopItem {
+  menuItemId: string;
+  sku: string;
+  name: string;
+  quantity: number;
+  netSalesCents: number;
+}
+
+export interface OutletTopItems {
+  outlet: ReportOutlet;
+  items: TopItem[];
+}
+
+export interface LowStockLine {
+  outlet: Pick<Outlet, 'id' | 'code' | 'name'>;
+  menuItemId: string;
+  sku: string;
+  name: string;
+  stock: number;
+  outOfStock: boolean;
+}

@@ -7,13 +7,18 @@ import type {
   HealthReport,
   ListQuery,
   LoginResult,
+  LowStockLine,
   MenuItem,
   MenuItemInput,
   Outlet,
   OutletInput,
   OutletMenuItem,
+  OutletTopItems,
+  PageQuery,
   Paged,
+  PeriodQuery,
   Receipt,
+  RevenueReport,
   SaleQuery,
   SaleRequest,
   SaleSummary,
@@ -164,5 +169,13 @@ export const api = {
   stockHistory: (outletId: string, menuItemId: string, query: ListQuery) =>
     request<Paged<StockMovement>>(`/outlets/${outletId}/inventory/${menuItemId}/movements${queryOf(query)}`),
   changeStock: (outletId: string, menuItemId: string, key: string, change: StockChange) =>
-    sendOnce<StockMovement>(`/outlets/${outletId}/inventory/${menuItemId}/adjustments`, key, change)
+    sendOnce<StockMovement>(`/outlets/${outletId}/inventory/${menuItemId}/adjustments`, key, change),
+
+  // Every outlet, also one without sales, with the totals of all of them
+  revenueByOutlet: (query: PeriodQuery & PageQuery) =>
+    request<RevenueReport>(`/reports/revenue-by-outlet${queryOf(query)}`),
+  // A page of outlets, each with its best sellers; with outletId only that one
+  topItems: (query: PeriodQuery & PageQuery & { outletId?: string }) =>
+    request<Paged<OutletTopItems>>(`/reports/top-items${queryOf(query)}`),
+  lowStock: (query: PageQuery) => request<Paged<LowStockLine>>(`/reports/low-stock${queryOf(query)}`)
 };
