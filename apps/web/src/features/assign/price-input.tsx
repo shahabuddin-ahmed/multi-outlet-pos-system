@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
+import { MoneyInput } from '@/components/shared/money-input';
 import { parsePrice, PRICE_HINT, priceText } from '@/lib/price-input';
 
 interface PriceInputProps {
@@ -36,11 +36,10 @@ export function PriceInput({ label, saved, placeholder, onSave }: PriceInputProp
 
   return (
     <div className="flex flex-col gap-1">
-      <Input
+      <MoneyInput
         aria-label={label}
         aria-invalid={Boolean(error)}
-        inputMode="decimal"
-        className="w-32 aria-invalid:border-red-600"
+        wrapperClassName="w-36"
         placeholder={placeholder}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}

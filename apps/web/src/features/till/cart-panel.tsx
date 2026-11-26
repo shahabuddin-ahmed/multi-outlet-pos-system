@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Field } from '@/components/shared/field';
+import { MoneyInput } from '@/components/shared/money-input';
 import { Banner } from '@/components/ui/banner';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
@@ -114,22 +115,14 @@ export function CartPanel() {
         onChange={(method) => dispatch(detailsSet({ method }))}
       />
       {cash ? (
-        <>
-          <Field label="Cash received">
-            <Input
-              inputMode="decimal"
-              value={draft.cashText}
-              disabled={locked}
-              placeholder="e.g. 700"
-              aria-invalid={Boolean(problem?.cash)}
-              className="aria-invalid:border-red-600"
-              onChange={(event) => dispatch(detailsSet({ cashText: event.target.value }))}
-            />
-          </Field>
-          <p role="alert" className="text-sm text-red-700 empty:hidden">
-            {problem?.cash}
-          </p>
-        </>
+        <Field label="Cash received" error={problem?.cash}>
+          <MoneyInput
+            value={draft.cashText}
+            disabled={locked}
+            placeholder="e.g. 700"
+            onChange={(event) => dispatch(detailsSet({ cashText: event.target.value }))}
+          />
+        </Field>
       ) : (
         <Field label="Reference (optional)" hint="Card approval or mobile banking transaction id">
           <Input
@@ -157,7 +150,8 @@ export function CartPanel() {
         </Button>
         <Button
           className="flex-1"
-          disabled={checkout.status === 'sending' || draft.lines.length === 0}
+          loading={checkout.status === 'sending'}
+          disabled={draft.lines.length === 0}
           onClick={() => void dispatch(completeSale(vatBps))}
         >
           {action}

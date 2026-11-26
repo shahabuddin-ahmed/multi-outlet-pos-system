@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useState, type ReactNode } from 'react';
-import { ListCard, SearchInput } from '@/components/shared/list-card';
+import { ListCard } from '@/components/shared/list-card';
+import { SearchInput } from '@/components/shared/search-input';
 import { PageHeader } from '@/components/shared/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

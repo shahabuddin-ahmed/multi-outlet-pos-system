@@ -85,7 +85,7 @@ export function AssignmentRow(props: AssignmentRowProps) {
           <Button
             variant="outline"
             size="sm"
-            disabled={saving}
+            loading={saving}
             aria-label={`Assign ${item.name}`}
             onClick={() => void save({}, `${item.name} assigned. Its stock starts at 0.`)}
           >

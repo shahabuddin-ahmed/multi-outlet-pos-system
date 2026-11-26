@@ -2,16 +2,18 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { ListCard, SearchInput } from '@/components/shared/list-card';
+import { DateRangePicker } from '@/components/shared/date-range-picker';
+import { ListCard } from '@/components/shared/list-card';
+import { SearchInput } from '@/components/shared/search-input';
 import { PageHeader } from '@/components/shared/page-header';
 import { buttonVariants } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Row, Table, TableHead, Td, Th } from '@/components/ui/table';
 import { useSettings } from '@/features/settings/settings-provider';
 import { useApiData } from '@/hooks/use-api-data';
 import { useDebounced } from '@/hooks/use-debounced';
 import { LIST_PAGE_SIZE } from '@/hooks/use-paged-search';
 import { api } from '@/lib/api';
+import { ALL_TIME } from '@/lib/date-range';
 import { ORDER_TYPE_LABELS, PAYMENT_LABELS } from '@/lib/labels';
 
 interface SalesListProps {
@@ -24,12 +26,11 @@ interface SalesListProps {
 
 export function SalesList({ outletId, text, picker }: SalesListProps) {
   const { money, dateTime } = useSettings();
-  const [filters, setFilters] = useState({ receipt: '', from: '', to: '' });
+  const [filters, setFilters] = useState({ receipt: '', range: ALL_TIME });
   const [offset, setOffset] = useState(0);
-  // Each waits until typing stops, so half a receipt number or date is not searched
+  // Waits until typing stops, so half a receipt number is not searched
   const receipt = useDebounced(filters.receipt.trim());
-  const from = useDebounced(filters.from);
-  const to = useDebounced(filters.to);
+  const { from, to } = filters.range;
 
   const load = useMemo(
     () => () => {
@@ -53,31 +54,19 @@ export function SalesList({ outletId, text, picker }: SalesListProps) {
         {picker}
       </PageHeader>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <SearchInput
-          label="Receipt number, e.g. DHK-000042 or 42"
+          label="Search by receipt number"
+          placeholder="DHK-000042 or 42"
           value={filters.receipt}
           onChange={(value) => filter({ receipt: value })}
         />
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          From
-          <Input
-            type="date"
-            className="w-auto"
-            value={filters.from}
-            onChange={(event) => filter({ from: event.target.value })}
-          />
-        </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          To
-          <Input
-            type="date"
-            className="w-auto"
-            value={filters.to}
-            onChange={(event) => filter({ to: event.target.value })}
-          />
-        </label>
-        <span className="pb-2.5 text-xs text-muted-foreground">Search by receipt number, e.g. DHK-000042 or 42</span>
+        <DateRangePicker
+          label="Sale dates"
+          align="start"
+          value={filters.range}
+          onChange={(range) => filter({ range })}
+        />
       </div>
 
       <ListCard

@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { ListCard, SearchInput } from '@/components/shared/list-card';
+import { ListCard } from '@/components/shared/list-card';
+import { SearchInput } from '@/components/shared/search-input';
 import { PageState } from '@/components/shared/page-state';
 import { Table, TableHead, Th } from '@/components/ui/table';
 import { AssignmentRow } from '@/features/assign/assignment-row';

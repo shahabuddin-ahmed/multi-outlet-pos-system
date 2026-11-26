@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/shared/empty-state';
-import { SearchInput } from '@/components/shared/list-card';
+import { SearchInput } from '@/components/shared/search-input';
 import { PageHeader } from '@/components/shared/page-header';
 import { PageState } from '@/components/shared/page-state';
 import { Banner } from '@/components/ui/banner';

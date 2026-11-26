@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils';
 // Scrolls sideways on a narrow screen instead of squeezing the columns
 export function Table({ className, ...props }: TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="overflow-x-auto">
+    // relative: hidden screen reader text in the cells must scroll with the table, not widen the page
+    <div className="relative overflow-x-auto">
       <table className={cn('w-full text-left text-sm', className)} {...props} />
     </div>
   );

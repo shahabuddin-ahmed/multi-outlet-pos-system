@@ -4,30 +4,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PageState } from '@/components/shared/page-state';
 import { Pager } from '@/components/shared/pager';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import type { Paged } from '@/types';
-
-export function SearchInput({
-  label,
-  value,
-  onChange
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <Input
-      type="search"
-      aria-label={label}
-      placeholder="Search…"
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      maxLength={100}
-      className="w-56"
-    />
-  );
-}
 
 interface ListCardProps<T> extends PropsWithChildren {
   page: Paged<T> | null;

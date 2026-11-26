@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Store } from 'lucide-react';
+import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { PageState } from '@/components/shared/page-state';
@@ -11,11 +12,10 @@ import { LowStockCard } from '@/features/dashboard/low-stock-card';
 import { OutletBars } from '@/features/dashboard/outlet-bars';
 import { StatTile } from '@/features/dashboard/stat-tile';
 import { TopItemsCard } from '@/features/dashboard/top-items-card';
-import { PeriodFilter } from '@/features/reports/period-filter';
-import { usePeriod } from '@/features/reports/use-period';
 import { useSettings } from '@/features/settings/settings-provider';
 import { useApiData } from '@/hooks/use-api-data';
 import { api } from '@/lib/api';
+import { ALL_TIME, periodQueryOf } from '@/lib/date-range';
 import { fetchAll } from '@/lib/fetch-all';
 import { cn } from '@/lib/utils';
 import type { PeriodQuery, SalesTotals } from '@/types';
@@ -33,8 +33,9 @@ async function loadRevenue(period: PeriodQuery) {
 
 export function DashboardView() {
   const { money, count } = useSettings();
-  const period = usePeriod();
-  const revenue = useApiData(useMemo(() => () => loadRevenue(period.query), [period.query]));
+  const [range, setRange] = useState(ALL_TIME);
+  const period = useMemo(() => periodQueryOf(range), [range]);
+  const revenue = useApiData(useMemo(() => () => loadRevenue(period), [period]));
   const [chosen, setChosen] = useState('');
   const outlets = revenue.data?.outlets.map((row) => row.outlet) ?? [];
   // Until one is picked, the first outlet
@@ -43,7 +44,7 @@ export function DashboardView() {
   return (
     <>
       <PageHeader title="Dashboard" text="Revenue and best sellers across all outlets">
-        <PeriodFilter period={period} />
+        <DateRangePicker label="Period" value={range} onChange={setRange} />
       </PageHeader>
 
       {!revenue.data && (
@@ -80,7 +81,7 @@ export function DashboardView() {
                 <OutletBars outlets={revenue.data.outlets} />
               </CardContent>
             </Card>
-            <TopItemsCard outlets={outlets} outletId={outletId} onOutlet={setChosen} period={period.query} />
+            <TopItemsCard outlets={outlets} outletId={outletId} onOutlet={setChosen} period={period} />
           </div>
         </div>
       )}

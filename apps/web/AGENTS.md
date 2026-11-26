@@ -5,7 +5,7 @@ Rules for agents working in `apps/web`. The API rules are in [apps/api/AGENTS.md
 ## The one rule here
 
 **The web app only displays.** Prices, totals, stock checks, receipt numbers and report figures come from the API.
-Never recompute a rule in the browser. Money travels as integer cents; `formatMoney` only formats it for display.
+Never recompute a rule in the browser. Money travels as integer cents; `useSettings().money` only formats it for display.
 
 ## Structure (Next.js App Router)
 

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { useFieldErrors } from '@/hooks/use-field-errors';
 import { api, errorMessage } from '@/lib/api';
 import { STOCK_REASON_LABELS } from '@/lib/labels';
 import { isSettled } from '@/lib/retry';
@@ -38,6 +39,7 @@ export function StockChangeDialog({ outletId, line, reason: startReason, onDone 
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const { errors, check, clear } = useFieldErrors<'delta'>();
   // A change that got no answer. Only this one, with its key, may be sent again.
   const [unanswered, setUnanswered] = useState<{ key: string; change: StockChange } | null>(null);
 
@@ -46,8 +48,7 @@ export function StockChangeDialog({ outletId, line, reason: startReason, onDone 
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!unanswered && delta === null) {
-      setError('Enter a whole number, not 0');
+    if (!unanswered && !check({ delta: delta === null ? 'Enter a whole number, not 0' : '' })) {
       return;
     }
     const attempt = unanswered ?? {
@@ -73,7 +74,7 @@ export function StockChangeDialog({ outletId, line, reason: startReason, onDone 
 
   return (
     <Dialog title="Change stock" onClose={onDone}>
-      <form onSubmit={submit} className="flex flex-col gap-3">
+      <form onSubmit={submit} noValidate className="flex flex-col gap-3">
         <p className="text-sm text-muted-foreground">
           {line.name} · now <strong>{line.stock}</strong> in stock
         </p>
@@ -82,13 +83,16 @@ export function StockChangeDialog({ outletId, line, reason: startReason, onDone 
             No answer from the server. The change may already be saved. Press Retry: it is applied only once.
           </Banner>
         )}
-        <Field label="Change" hint="Use a plus number to add and a minus number to remove">
+        <Field label="Change" hint="Use a plus number to add and a minus number to remove" error={errors.delta}>
           <Input
             inputMode="text"
             value={text}
             disabled={Boolean(unanswered)}
             placeholder={EXAMPLES[reason]}
-            onChange={(event) => setText(event.target.value)}
+            onChange={(event) => {
+              setText(event.target.value);
+              clear('delta');
+            }}
             required
           />
         </Field>
@@ -99,16 +103,12 @@ export function StockChangeDialog({ outletId, line, reason: startReason, onDone 
         )}
         <Field label="Reason">
           <Select
+            options={REASONS.map((option) => ({ value: option, label: STOCK_REASON_LABELS[option] }))}
             value={reason}
             disabled={Boolean(unanswered)}
-            onChange={(event) => setReason(event.target.value as ManualStockReason)}
-          >
-            {REASONS.map((option) => (
-              <option key={option} value={option}>
-                {STOCK_REASON_LABELS[option]}
-              </option>
-            ))}
-          </Select>
+            onChange={setReason}
+            className="w-full"
+          />
         </Field>
         <Field label="Note (optional)">
           <Input
@@ -125,7 +125,7 @@ export function StockChangeDialog({ outletId, line, reason: startReason, onDone 
           <Button type="button" variant="outline" onClick={onDone}>
             {unanswered ? 'Close and check' : 'Cancel'}
           </Button>
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" loading={saving}>
             {saving ? 'Saving…' : unanswered ? 'Retry (safe)' : 'Save'}
           </Button>
         </div>

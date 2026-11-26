@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { ConfirmSwitchOff } from '@/components/shared/confirm-switch-off';
-import { ListCard, SearchInput } from '@/components/shared/list-card';
+import { ListCard } from '@/components/shared/list-card';
+import { SearchInput } from '@/components/shared/search-input';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
