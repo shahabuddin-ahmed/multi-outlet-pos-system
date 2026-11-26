@@ -1,16 +1,18 @@
-import { CircleAlert } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface PageStateProps {
   message: string;
   error?: boolean;
   // Shown with an error, when trying again can help
   onRetry?: () => void;
+  // Shown while loading, in the shape of what is coming; a spinner when left out
+  skeleton?: ReactNode;
 }
 
-export function PageState({ message, error = false, onRetry }: PageStateProps) {
+export function PageState({ message, error = false, onRetry, skeleton }: PageStateProps) {
   if (error) {
     return (
       <Card role="alert" className="border-red-200">
@@ -30,14 +32,20 @@ export function PageState({ message, error = false, onRetry }: PageStateProps) {
     );
   }
 
+  if (skeleton) {
+    return (
+      <div role="status">
+        <span className="sr-only">{message}</span>
+        {skeleton}
+      </div>
+    );
+  }
+
   return (
     <Card role="status">
-      <CardContent className="flex flex-col gap-3 py-6">
-        <span className="sr-only">{message}</span>
-        <Skeleton className="h-5 w-1/3" />
-        <Skeleton className="h-4 w-2/3" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="mt-2 h-28 w-full rounded-lg" />
+      <CardContent className="flex items-center justify-center gap-2.5 py-10 text-sm text-muted-foreground">
+        <LoaderCircle aria-hidden="true" className="size-5 animate-spin motion-reduce:animate-none" />
+        {message}
       </CardContent>
     </Card>
   );

@@ -1,3 +1,4 @@
+import { CardGridSkeleton } from '@/components/shared/skeletons';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { OutletMenuItem } from '@/types';
@@ -11,10 +12,16 @@ interface MenuGridProps {
   onAdd: (item: OutletMenuItem) => void;
 }
 
+const GRID = 'grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3';
+
+export function MenuGridSkeleton() {
+  return <CardGridSkeleton count={8} className={GRID} cardClassName="h-32" />;
+}
+
 // One large button per item, made for touch screens
 export function MenuGrid({ items, inCart, money, disabled, onAdd }: MenuGridProps) {
   return (
-    <ul className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
+    <ul className={GRID}>
       {items.map((item) => {
         const quantity = inCart.get(item.menuItemId) ?? 0;
         return (

@@ -1,9 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
+import { UtensilsCrossed } from 'lucide-react';
+import { noMatch } from '@/components/shared/empty-state';
 import { ListCard } from '@/components/shared/list-card';
 import { SearchInput } from '@/components/shared/search-input';
 import { PageState } from '@/components/shared/page-state';
+import { buttonVariants } from '@/components/ui/button';
 import { Table, TableHead, Th } from '@/components/ui/table';
 import { AssignmentRow } from '@/features/assign/assignment-row';
 import { useApiData } from '@/hooks/use-api-data';
@@ -35,12 +39,23 @@ export function OutletAssignments({ outlet }: { outlet: Outlet }) {
       <ListCard
         page={assigned.data ? items.data : null}
         error={items.error}
+        loading={items.loading}
+        columns={7}
         onRetry={items.reload}
         onPage={items.setOffset}
         empty={
           items.searching
-            ? { title: 'Nothing matches' }
-            : { title: 'No menu items yet', text: 'Create items on the Menu items page first.' }
+            ? noMatch('No item has this name or SKU.', () => items.setSearch(''))
+            : {
+                icon: UtensilsCrossed,
+                title: 'No menu items yet',
+                text: 'Create items on the Menu items page first.',
+                children: (
+                  <Link href="/menu-items" className={buttonVariants({ size: 'sm' })}>
+                    Go to menu items
+                  </Link>
+                )
+              }
         }
       >
         <Table>

@@ -1,10 +1,13 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { Store } from 'lucide-react';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { PageState } from '@/components/shared/page-state';
+import { TableSkeleton } from '@/components/shared/skeletons';
+import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { OutletSelect } from '@/features/outlets/outlet-select';
 import { useOutletChoice } from '@/features/outlets/use-outlet-choice';
@@ -30,10 +33,19 @@ export function OneOutlet({ title, text, children }: OneOutletProps) {
       <PageHeader title={title} text={text} />
       {outlets.data ? (
         <Card>
-          <EmptyState icon={Store} title="No outlets yet" text="Create an outlet on the Outlets page first." />
+          <EmptyState icon={Store} title="No outlets yet" text="Create an outlet on the Outlets page first.">
+            <Link href="/outlets" className={buttonVariants({ size: 'sm' })}>
+              Go to outlets
+            </Link>
+          </EmptyState>
         </Card>
       ) : (
-        <PageState message={outlets.error || 'Loading…'} error={Boolean(outlets.error)} onRetry={outlets.reload} />
+        <PageState
+          message={outlets.error || 'Loading…'}
+          error={Boolean(outlets.error)}
+          onRetry={outlets.reload}
+          skeleton={<TableSkeleton columns={5} />}
+        />
       )}
     </>
   );

@@ -1,15 +1,20 @@
 'use client';
 
 import { useCallback, useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import { Package } from 'lucide-react';
+import { noMatch } from '@/components/shared/empty-state';
 import { ListCard } from '@/components/shared/list-card';
 import { SearchInput } from '@/components/shared/search-input';
 import { PageHeader } from '@/components/shared/page-header';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Row, Table, TableHead, Td, Th } from '@/components/ui/table';
 import { StockChangeDialog } from '@/features/stock/stock-change-dialog';
+import { useUser } from '@/features/session/use-user';
 import { StockHistoryDialog } from '@/features/stock/stock-history-dialog';
 import { usePagedSearch } from '@/hooks/use-paged-search';
+import { canOpen } from '@/lib/access';
 import { api } from '@/lib/api';
 import type { ListQuery, ManualStockReason, StockLine } from '@/types';
 
@@ -37,6 +42,7 @@ interface OutletStockProps {
 export function OutletStock({ outletId, outletName, picker }: OutletStockProps) {
   const loadPage = useCallback((query: ListQuery) => api.listStock(outletId, query), [outletId]);
   const list = usePagedSearch(loadPage);
+  const { role } = useUser();
   const [changing, setChanging] = useState<{ line: StockLine; reason: ManualStockReason } | null>(null);
   const [viewing, setViewing] = useState<StockLine | null>(null);
 
@@ -50,12 +56,26 @@ export function OutletStock({ outletId, outletName, picker }: OutletStockProps) 
       <ListCard
         page={list.data}
         error={list.error}
+        loading={list.loading}
+        columns={4}
         onRetry={list.reload}
         onPage={list.setOffset}
         empty={
           list.searching
-            ? { title: 'Nothing matches' }
-            : { title: 'No items assigned', text: 'Head office assigns menu items to an outlet first.' }
+            ? noMatch('No item here has this name or SKU.', () => list.setSearch(''))
+            : {
+                icon: Package,
+                title: 'No items assigned',
+                text: 'Head office assigns menu items to an outlet first.',
+                children: canOpen(role, '/assign') && (
+                  <Link
+                    href={{ pathname: '/assign', query: { outlet: outletId } }}
+                    className={buttonVariants({ size: 'sm' })}
+                  >
+                    Assign menu
+                  </Link>
+                )
+              }
         }
       >
         <Table>

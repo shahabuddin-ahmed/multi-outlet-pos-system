@@ -7,7 +7,10 @@ import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { PageState } from '@/components/shared/page-state';
+import { Refreshing } from '@/components/shared/refreshing';
+import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DashboardSkeleton } from '@/features/dashboard/dashboard-skeleton';
 import { LowStockCard } from '@/features/dashboard/low-stock-card';
 import { OutletBars } from '@/features/dashboard/outlet-bars';
 import { StatTile } from '@/features/dashboard/stat-tile';
@@ -17,7 +20,6 @@ import { useApiData } from '@/hooks/use-api-data';
 import { api } from '@/lib/api';
 import { ALL_TIME, periodQueryOf } from '@/lib/date-range';
 import { fetchAll } from '@/lib/fetch-all';
-import { cn } from '@/lib/utils';
 import type { PeriodQuery, SalesTotals } from '@/types';
 
 // Every outlet's figures, with the totals the API counts over all of them
@@ -48,18 +50,27 @@ export function DashboardView() {
       </PageHeader>
 
       {!revenue.data && (
-        <PageState message={revenue.error || 'Loading…'} error={Boolean(revenue.error)} onRetry={revenue.reload} />
+        <PageState
+          message={revenue.error || 'Loading…'}
+          error={Boolean(revenue.error)}
+          onRetry={revenue.reload}
+          skeleton={<DashboardSkeleton />}
+        />
       )}
 
       {revenue.data && !outletId && (
         <Card>
-          <EmptyState icon={Store} title="No outlets yet" text="Create an outlet on the Outlets page first." />
+          <EmptyState icon={Store} title="No outlets yet" text="Create an outlet on the Outlets page first.">
+            <Link href="/outlets" className={buttonVariants({ size: 'sm' })}>
+              Go to outlets
+            </Link>
+          </EmptyState>
         </Card>
       )}
 
       {revenue.data && outletId && (
         // The last figures stay on screen, faded, while new ones load
-        <div aria-busy={revenue.loading} className={cn('grid gap-4', revenue.loading && 'opacity-60')}>
+        <Refreshing active={revenue.loading} className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-3">
             <StatTile label="Net sales (before VAT)" value={money(revenue.data.totals.netSalesCents)} />
             <StatTile label="Sales" value={count(revenue.data.totals.salesCount)} />
@@ -83,7 +94,7 @@ export function DashboardView() {
             </Card>
             <TopItemsCard outlets={outlets} outletId={outletId} onOutlet={setChosen} period={period} />
           </div>
-        </div>
+        </Refreshing>
       )}
 
       <LowStockCard />

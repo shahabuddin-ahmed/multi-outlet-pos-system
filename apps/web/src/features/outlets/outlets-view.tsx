@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, Store } from 'lucide-react';
 import { ConfirmSwitchOff } from '@/components/shared/confirm-switch-off';
+import { noMatch } from '@/components/shared/empty-state';
 import { ListCard } from '@/components/shared/list-card';
 import { SearchInput } from '@/components/shared/search-input';
 import { PageHeader } from '@/components/shared/page-header';
@@ -37,12 +38,24 @@ export function OutletsView() {
       <ListCard
         page={list.data}
         error={list.error}
+        loading={list.loading}
+        columns={6}
         onRetry={list.reload}
         onPage={list.setOffset}
         empty={
           list.searching
-            ? { title: 'Nothing matches' }
-            : { title: 'No outlets yet', text: 'Create the first one to start.' }
+            ? noMatch('No outlet has this name or code.', () => list.setSearch(''))
+            : {
+                icon: Store,
+                title: 'No outlets yet',
+                text: 'Create the first one to start.',
+                children: (
+                  <Button size="sm" onClick={() => setEditing('new')}>
+                    <Plus aria-hidden="true" className="size-4" />
+                    New outlet
+                  </Button>
+                )
+              }
         }
       >
         <Table>

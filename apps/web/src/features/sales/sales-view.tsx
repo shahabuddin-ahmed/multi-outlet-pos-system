@@ -1,6 +1,8 @@
 'use client';
 
+import { PageHeader } from '@/components/shared/page-header';
 import { PageState } from '@/components/shared/page-state';
+import { TableSkeleton } from '@/components/shared/skeletons';
 import { OutletSelect } from '@/features/outlets/outlet-select';
 import { useOutletChoice } from '@/features/outlets/use-outlet-choice';
 import { SalesList } from '@/features/sales/sales-list';
@@ -10,7 +12,17 @@ function HeadOfficeSales() {
   const { outlets, selected, choose } = useOutletChoice({ allowAll: true });
 
   if (!outlets.data) {
-    return <PageState message={outlets.error || 'Loading…'} error={Boolean(outlets.error)} onRetry={outlets.reload} />;
+    return (
+      <>
+        <PageHeader title="Sales history" />
+        <PageState
+          message={outlets.error || 'Loading…'}
+          error={Boolean(outlets.error)}
+          onRetry={outlets.reload}
+          skeleton={<TableSkeleton columns={7} />}
+        />
+      </>
+    );
   }
 
   return (

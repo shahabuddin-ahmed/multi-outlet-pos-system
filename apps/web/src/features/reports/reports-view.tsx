@@ -1,10 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { Store } from 'lucide-react';
 import { DateRangePicker } from '@/components/shared/date-range-picker';
 import { ListCard } from '@/components/shared/list-card';
 import { PageHeader } from '@/components/shared/page-header';
 import { PageState } from '@/components/shared/page-state';
+import { Refreshing } from '@/components/shared/refreshing';
+import { CardGridSkeleton } from '@/components/shared/skeletons';
+import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RevenueTable } from '@/features/reports/revenue-table';
 import { TopItemsList } from '@/features/reports/top-items-list';
@@ -12,7 +17,8 @@ import { useApiData } from '@/hooks/use-api-data';
 import { LIST_PAGE_SIZE } from '@/hooks/use-paged-search';
 import { api } from '@/lib/api';
 import { ALL_TIME, periodQueryOf } from '@/lib/date-range';
-import { cn } from '@/lib/utils';
+
+const TOP_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4';
 
 export function ReportsView() {
   const [range, setRange] = useState(ALL_TIME);
@@ -29,25 +35,30 @@ export function ReportsView() {
         <DateRangePicker label="Period" value={range} onChange={setRange} />
       </PageHeader>
 
-      {/* The last figures stay on screen, faded, while new ones load */}
-      <div aria-busy={revenue.loading} className={cn(revenue.loading && revenue.data && 'opacity-60')}>
-        <ListCard
-          page={revenue.data}
-          error={revenue.error}
-          onRetry={revenue.reload}
-          onPage={setOffset}
-          empty={{ title: 'No outlets yet', text: 'Create an outlet on the Outlets page first.' }}
-        >
-          {revenue.data && <RevenueTable report={revenue.data} />}
-        </ListCard>
-      </div>
+      <ListCard
+        page={revenue.data}
+        error={revenue.error}
+        loading={revenue.loading}
+        columns={5}
+        onRetry={revenue.reload}
+        onPage={setOffset}
+        empty={{
+          icon: Store,
+          title: 'No outlets yet',
+          text: 'Create an outlet on the Outlets page first.',
+          children: (
+            <Link href="/outlets" className={buttonVariants({ size: 'sm' })}>
+              Go to outlets
+            </Link>
+          )
+        }}
+      >
+        {revenue.data && <RevenueTable report={revenue.data} />}
+      </ListCard>
 
       {/* Left out while the table shows an error, so one problem is told once */}
       {revenue.error ? null : top.data ? (
-        <div
-          aria-busy={top.loading}
-          className={cn('grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4', top.loading && 'opacity-60')}
-        >
+        <Refreshing active={top.loading} className={TOP_GRID}>
           {top.data.data.map(({ outlet, items }) => (
             <Card key={outlet.id}>
               <CardHeader className="pb-1">
@@ -58,9 +69,14 @@ export function ReportsView() {
               </CardContent>
             </Card>
           ))}
-        </div>
+        </Refreshing>
       ) : (
-        <PageState message={top.error || 'Loading…'} error={Boolean(top.error)} onRetry={top.reload} />
+        <PageState
+          message={top.error || 'Loading…'}
+          error={Boolean(top.error)}
+          onRetry={top.reload}
+          skeleton={<CardGridSkeleton count={3} className={TOP_GRID} cardClassName="h-56" />}
+        />
       )}
     </>
   );
