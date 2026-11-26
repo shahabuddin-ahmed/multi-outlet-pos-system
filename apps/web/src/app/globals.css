@@ -35,3 +35,152 @@ body {
 ::selection {
   background-color: hsl(var(--primary) / 0.18);
 }
+
+/* The calendar in the app's colours and size */
+.calendar.rdp-root {
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-accent-background-color: hsl(var(--accent));
+  --rdp-today-color: hsl(var(--primary));
+  --rdp-day-height: 38px;
+  --rdp-day-width: 38px;
+  --rdp-day_button-height: 36px;
+  --rdp-day_button-width: 36px;
+  --rdp-day_button-border-radius: 8px;
+  --rdp-months-gap: 1.5rem;
+  --rdp-nav-height: 2.25rem;
+  font-size: 0.875rem;
+}
+
+.calendar .rdp-caption_label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.calendar .rdp-weekday {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.calendar .rdp-selected {
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.calendar .rdp-chevron {
+  width: 18px;
+  height: 18px;
+  fill: hsl(var(--muted-foreground));
+}
+
+.calendar .rdp-day:not(.rdp-selected) .rdp-day_button:hover:not(:disabled) {
+  background-color: hsl(var(--muted));
+}
+
+.calendar .rdp-day_button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
+
+.calendar .rdp-disabled:not(.rdp-selected) {
+  opacity: 0.35;
+}
+
+.calendar .rdp-day_button:disabled {
+  cursor: not-allowed;
+}
+
+/* Reload indicator: appears after a moment, then slides */
+.progress-bar {
+  opacity: 0;
+  animation: appear 0s linear 150ms forwards;
+}
+
+.progress-bar > span:last-child {
+  animation: progress-slide 1.1s ease-in-out infinite;
+}
+
+/* The slide-out menu */
+.drawer[data-state='open'] {
+  animation: drawer-in 180ms ease-out;
+}
+
+.drawer[data-state='closed'] {
+  animation: drawer-in 150ms ease-in reverse forwards;
+}
+
+.drawer-overlay[data-state='open'] {
+  animation: appear-softly 180ms ease-out;
+}
+
+.drawer-overlay[data-state='closed'] {
+  animation: appear-softly 150ms ease-in reverse forwards;
+}
+
+@keyframes appear {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes appear-softly {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar > span:last-child {
+    width: 100%;
+    animation: none;
+  }
+
+  .drawer[data-state] {
+    animation: none;
+  }
+}
+
+/* A dialog has padding above its content: a stuck table header goes to the very top, so no row shows above it */
+[role='dialog'] .table-head > th {
+  top: -1.25rem;
+}
+
+/* Printing gives the receipt alone, sized for an 80 mm printer */
+.print-area {
+  display: none;
+}
+
+@media print {
+  body > *:not(.print-area) {
+    display: none !important;
+  }
+
+  /* An open dialog locks scrolling, which would cut a long receipt off */
+  body {
+    background: white;
+    overflow: visible !important;
+  }
+
+  .print-area {
+    display: block;
+    width: 72mm;
+  }
+
+  @page {
+    margin: 4mm;
+  }
+}
