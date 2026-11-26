@@ -216,6 +216,21 @@ describe("checkout", () => {
         expect(accepted.body.response.receiptNumber).toBe(1);
     });
 
+    it("cancels the whole sale when only one item is short", async () => {
+        await changeStock(drink, -99);
+
+        // The burger is the older item, so its stock is taken before the drink turns out to be short
+        const refused = await sell(order([line(burger, 2), line(drink, 2)]));
+
+        expect(refused.status).toBe(409);
+        expect(refused.body.code).toBe("E_INSUFFICIENT_STOCK");
+        expect(refused.body.errors).toEqual(["Item DR-001: 1 left"]);
+        expect(await written()).toEqual(NOTHING);
+        expect([await stockOf(burger), await stockOf(drink)]).toEqual([100, 1]);
+        // No receipt number was used up
+        expect((await sell()).body.response.receiptNumber).toBe(1);
+    });
+
     it("saves nothing when the price changed, and tells the new total", async () => {
         const body = order();
         const key = randomUUID();
