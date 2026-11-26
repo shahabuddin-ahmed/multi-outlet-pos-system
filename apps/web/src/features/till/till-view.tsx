@@ -49,6 +49,7 @@ export function TillView() {
   const wanted = search.trim().toLowerCase();
   const shown = menu.data?.filter((item) => `${item.name} ${item.sku}`.toLowerCase().includes(wanted)) ?? [];
   const count = draft.lines.reduce((sum, line) => sum + line.quantity, 0);
+  const inCart = new Map(draft.lines.map((line) => [line.menuItemId, line.quantity]));
   const total = estimateTotals(draft.lines, draft.vatBps ?? vatBps).totalCents;
 
   const add = (item: OutletMenuItem) => {
@@ -62,12 +63,12 @@ export function TillView() {
 
   return (
     <>
-      <PageHeader title="Till" text={`${outlet!.name} · ${fullName}`}>
-        <SearchInput label="Search items" value={search} onChange={setSearch} />
-      </PageHeader>
-
+      {/* The title is above the items only, so that the cart gets the height of the screen */}
       <div className="grid items-start gap-4 min-[720px]:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_390px]">
-        <div>
+        <div className="flex flex-col gap-6">
+          <PageHeader title="Till" text={`${outlet!.name} · ${fullName}`}>
+            <SearchInput label="Search items" value={search} onChange={setSearch} />
+          </PageHeader>
           {!menu.data && (
             <PageState message={menu.error || 'Loading…'} error={Boolean(menu.error)} onRetry={menu.reload} />
           )}
@@ -82,22 +83,25 @@ export function TillView() {
               />
             </Card>
           )}
-          <MenuGrid items={shown} money={money} disabled={isLocked(checkout)} onAdd={add} />
+          <MenuGrid items={shown} inCart={inCart} money={money} disabled={isLocked(checkout)} onAdd={add} />
         </div>
 
         {/* Shown even when the menu cannot be loaded: an unconfirmed sale must stay in reach */}
         <Card
           className={cn(
-            'p-4 min-[720px]:sticky min-[720px]:top-3 min-[720px]:block min-[720px]:max-h-[calc(100vh-1.5rem)] min-[720px]:overflow-y-auto',
+            // Less the bars above the page (taller below 1024px, where the menu is on top), so it fits the screen
+            'flex-col min-[720px]:sticky min-[720px]:top-3 min-[720px]:flex min-[720px]:max-h-[calc(100dvh-15rem)] lg:max-h-[calc(100dvh-7rem)]',
             cartOpen
-              ? 'max-[719px]:fixed max-[719px]:inset-0 max-[719px]:z-30 max-[719px]:overflow-y-auto max-[719px]:rounded-none'
+              ? 'max-[719px]:fixed max-[719px]:inset-0 max-[719px]:z-30 max-[719px]:flex max-[719px]:rounded-none'
               : 'max-[719px]:hidden'
           )}
         >
-          <Button variant="outline" size="sm" className="mb-3 min-[720px]:hidden" onClick={() => setCartOpen(false)}>
-            <ArrowLeft aria-hidden="true" className="size-4" />
-            Back to items
-          </Button>
+          <div className="px-4 pt-3 min-[720px]:hidden">
+            <Button variant="outline" size="sm" onClick={() => setCartOpen(false)}>
+              <ArrowLeft aria-hidden="true" className="size-4" />
+              Back to items
+            </Button>
+          </div>
           <CartPanel />
         </Card>
       </div>
